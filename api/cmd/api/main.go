@@ -11,9 +11,19 @@ import (
 	"wongnok/internal/database"
 	"wongnok/internal/user"
 
+	_ "wongnok/docs"
+
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
+// @title			Wongnok API
+// @version		1.0
+// @description	API สำหรับจัดการกับระบบสูตรอาหาร
+// @host			localhost:8080
+// @BasePath		/api/v1
+// @schemas		http https
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -32,11 +42,17 @@ func main() {
 	// Register path
 	router := gin.Default()
 
+	// Group version
+	v1 := router.Group("/api/v1")
+
 	// curl -X GET http://localhost:8080/users/{id}
-	router.GET("/users/:id", userHandler.GetUser)
+	v1.GET("/users/:id", userHandler.GetUser)
 
 	// curl -X POST http://localhost:8080/users -H "Content-Type: application/json" -d '{"email":"taro@devpool.pea"}'
-	router.POST("/users", userHandler.CreateUser)
+	v1.POST("/users", userHandler.CreateUser)
+
+	// Register swagger
+	router.GET("swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Server
 	serv := &http.Server{

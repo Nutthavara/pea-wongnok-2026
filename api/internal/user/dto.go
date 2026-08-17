@@ -5,8 +5,8 @@ import (
 )
 
 type CreateUserRequest struct {
-	Name  *string `json:"name"`
-	Email string  `json:"email" binding:"required,email"`
+	Name  *string `json:"name" example:"สมชาย ใจดี"`
+	Email string  `json:"email" binding:"required,email" example:"somchai@pea.co.th"`
 }
 
 func (req CreateUserRequest) ToUser() User {
@@ -17,9 +17,9 @@ func (req CreateUserRequest) ToUser() User {
 }
 
 type UserResponse struct {
-	ID    string `json:"id"`
-	Name  string `json:"name,omitempty"`
-	Email string `json:"email"`
+	ID    string `json:"id" example:"3f0c1a7e-2b19-4c5e-9f3a"`
+	Name  string `json:"name,omitempty" example:"สมชาย ใจดี"`
+	Email string `json:"email" example:"somchai@pea.co.th"`
 }
 
 func NewUserResponse(user User) UserResponse {
