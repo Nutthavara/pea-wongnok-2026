@@ -6,7 +6,7 @@ import (
 
 type CreateUserRequest struct {
 	Name  *string `json:"name"`
-	Email string  `json:"email"`
+	Email string  `json:"email" binding:"required,email"`
 }
 
 func (req CreateUserRequest) ToUser() User {
