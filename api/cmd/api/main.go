@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-	"wongnok/internal/database"
+	"wongnok/internal/platform/database"
 	"wongnok/internal/user"
 
 	_ "wongnok/docs"
