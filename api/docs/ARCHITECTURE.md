@@ -144,7 +144,7 @@ not null) และ `deleted_at` (datetime, nullable) สำหรับ soft de
 | `created_at`, `updated_at` | datetime | not null                             |
 | `deleted_at`               | datetime | nullable; soft delete                |
 
-มี unique composite index ที่ `(`user_id`, `recipe_id`)` จึงมีได้เพียงหนึ่งรายการโปรดต่อผู้ใช้หนึ่งคนและสูตรหนึ่งรายการ
+มี unique composite index ที่ `(`user_id`,` recipe_id`)` จึงมีได้เพียงหนึ่งรายการโปรดต่อผู้ใช้หนึ่งคนและสูตรหนึ่งรายการ
 
 ### `recipe_ratings`
 
