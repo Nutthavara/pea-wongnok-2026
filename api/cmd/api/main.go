@@ -12,11 +12,13 @@ import (
 	"os/signal"
 	"syscall"
 	"wongnok/internal/config"
+	"wongnok/internal/middleware"
 	"wongnok/internal/platform/database"
 	"wongnok/internal/user"
 
 	_ "wongnok/docs"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -69,13 +71,23 @@ func run() error {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
+	// Register cors
+	router.Use(cors.Default())
+
 	// Group version
 	v1 := router.Group("/api/v1")
 
-	// curl -X GET http://localhost:8080/users/{id}
+	// เพิ่ม option -u เข้าไปใน curl หรือใช้ Basic auth ใน Postman
+	// curl -u username:password ...
+	v1.Use(middleware.BasicAuthMiddleware())
+
+	// Gin มี basic auth ให้ใช้งานได้เลย แต่ยกตัวอย่างการสร้าง middleware ให้เห็นภาพเฉย ๆ
+	// v1.Use(gin.BasicAuth(gin.Accounts{"admin": "secret"}))
+
+	// curl -X GET http://localhost:8080/api/v1/users/{id}
 	v1.GET("/users/:id", userHandler.GetUser)
 
-	// curl -X POST http://localhost:8080/users -H "Content-Type: application/json" -d '{"email":"taro@devpool.pea"}'
+	// curl -X POST http://localhost:8080/api/v1/users -H "Content-Type: application/json" -d '{"email":"taro@devpool.pea"}'
 	v1.POST("/users", userHandler.CreateUser)
 
 	// Register swagger
