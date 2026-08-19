@@ -30,6 +30,7 @@ erDiagram
         string email
         string uid UK
         string name
+        text bio
         string preferred_username
         datetime last_signed_in_at
         datetime deleted_at
@@ -102,6 +103,7 @@ erDiagram
 | `id`                       | uuid     | primary key, not null |
 | `email`                    | string   | not null; indexed     |
 | `name`                     | string   | nullable              |
+| `bio`                      | text     | nullable              |
 | `uid`                      | uid      | not null; unique      |
 | `preferred_username`       | string   | nullable              |
 | `last_signed_in_at`        | datetime | nullable              |

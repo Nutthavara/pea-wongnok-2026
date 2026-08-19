@@ -11,7 +11,6 @@ import (
 
 type Service interface {
 	FindByID(ctx context.Context, id string) (*User, error)
-	Create(ctx context.Context, user User) (*User, error)
 }
 
 type handler struct {
@@ -58,32 +57,4 @@ func (hdr *handler) GetUser(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, NewUserResponse(*user))
-}
-
-// CreateUser godoc
-//
-//	@Summary		สร้าง user
-//	@Description	สร้าง user โดยรับข้อมูลจาก client และ generate uuid ให้ พร้อมสรายละเอียดของ user ที่ถูกสร้างกลับไป
-//	@Tags			users
-//	@Security		BearerAuth
-//	@Produce		json
-//	@Param			payload	body		user.CreateUserRequest	true	"รายละเอียดสำหรับสร้าง User"
-//	@Success		201		{object}	user.UserResponse
-//	@Failure		400		{object}	httputil.ErrorResponse
-//	@Failure		500		{object}	httputil.ErrorResponse
-//	@Router			/users [post]
-func (hdr *handler) CreateUser(ctx *gin.Context) {
-	var req CreateUserRequest
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, httputil.ErrorResponse{Message: "invalid request body"})
-		return
-	}
-
-	user, err := hdr.service.Create(ctx, req.ToUser())
-	if err != nil {
-		ctx.JSON(http.StatusBadRequest, httputil.ErrorResponse{Message: err.Error()})
-		return
-	}
-
-	ctx.JSON(http.StatusCreated, NewUserResponse(*user))
 }

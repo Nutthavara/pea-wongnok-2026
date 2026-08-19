@@ -85,13 +85,17 @@ func run() error {
 	oidcVerifer := oidcProvider.Verifier(&oidc.Config{ClientID: cfg.Keycloak.ClientID})
 
 	// Dependency injection
-	authRepo := auth.NewRepository(rdb)
-	authService := auth.NewService(authRepo, cfg.Keycloak, oidcProvider, oidcVerifer)
-	authHandler := auth.NewHandler(authService)
-
 	userRepo := user.NewRepository(db)
 	userService := user.NewService(userRepo)
 	userHandler := user.NewHandler(userService)
+
+	authRepo := auth.NewRepository(rdb)
+	authService := auth.NewService(authRepo, userService, auth.KeycloakDeps{
+		Config:   cfg.Keycloak,
+		Provider: oidcProvider,
+		Verifier: oidcVerifer,
+	})
+	authHandler := auth.NewHandler(authService)
 
 	// Register path
 	router := gin.Default()
@@ -114,17 +118,8 @@ func run() error {
 
 	// User resource
 	userGroup := v1.Group("/users")
-
-	// JWT Verify middleware
 	userGroup.Use(middleware.JWT(oidcVerifer))
-
-	// curl -X GET \
-	// -H "Authorization: Bearer {token}" \n
-	// http://localhost:8080/api/v1/users/:id
 	userGroup.GET("/:id", userHandler.GetUser)
-
-	// curl -X POST http://localhost:8080/api/v1/users -H "Content-Type: application/json" -d '{"email":"taro@devpool.pea"}'
-	userGroup.POST("", userHandler.CreateUser)
 
 	// Register swagger
 	router.GET("swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

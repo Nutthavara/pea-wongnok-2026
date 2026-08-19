@@ -5,6 +5,7 @@ CREATE TABLE
     id UUID PRIMARY KEY,
     email VARCHAR(255) NOT NULL,
     name VARCHAR(255),
+    bio TEXT,
     uid VARCHAR(255) NOT NULL,
     preferred_username VARCHAR(255),
     last_signed_in_at TIMESTAMPTZ,

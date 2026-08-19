@@ -10,7 +10,6 @@ import (
 
 const bearerPrefix = "Bearer "
 
-// [CHANGED] Refactor middleware
 func JWT(verifier *oidc.IDTokenVerifier) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authHeader := ctx.GetHeader("Authorization")

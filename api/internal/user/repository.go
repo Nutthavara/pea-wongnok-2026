@@ -32,10 +32,27 @@ func (repo *repository) FindByID(ctx context.Context, id uuid.UUID) (*User, erro
 	return &result, nil
 }
 
-func (repo *repository) Create(ctx context.Context, user User) (*User, error) {
-	if err := repo.db.WithContext(ctx).Create(&user).Error; err != nil {
+// [CHANGE] เพิ่ม
+func (repo *repository) FindByUID(ctx context.Context, uid string) (*User, error) {
+	var result User
+
+	if err := repo.db.WithContext(ctx).First(&result, "uid = ?", uid).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrUserNotFound
+		}
+
 		return nil, err
 	}
 
-	return &user, nil
+	return &result, nil
+}
+
+// [CHANGE] เพิ่ม
+func (repo *repository) Create(ctx context.Context, user User) error {
+	return repo.db.WithContext(ctx).Create(&user).Error
+}
+
+// [CHANGE] เพิ่ม
+func (repo *repository) Update(ctx context.Context, user User) error {
+	return repo.db.WithContext(ctx).Save(&user).Error
 }

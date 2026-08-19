@@ -2,13 +2,19 @@ package user
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"time"
+	"wongnok/internal/convutil"
 
 	"github.com/google/uuid"
 )
 
 type Repository interface {
 	FindByID(ctx context.Context, id uuid.UUID) (*User, error)
-	Create(ctx context.Context, user User) (*User, error)
+	FindByUID(ctx context.Context, uid string) (*User, error)
+	Create(ctx context.Context, user User) error
+	Update(ctx context.Context, user User) error
 }
 
 type service struct {
@@ -30,6 +36,29 @@ func (svc *service) FindByID(ctx context.Context, id string) (*User, error) {
 	return svc.repository.FindByID(ctx, parsedID)
 }
 
-func (svc *service) Create(ctx context.Context, user User) (*User, error) {
-	return svc.repository.Create(ctx, user)
+func (svc *service) UpsertFromKeycloak(ctx context.Context, kuser KeycloakUser) error {
+	existing, err := svc.repository.FindByUID(ctx, kuser.UID)
+	if err != nil && !errors.Is(err, ErrUserNotFound) {
+		return fmt.Errorf("find user: %w", err)
+	}
+
+	now := time.Now()
+
+	if errors.Is(err, ErrUserNotFound) {
+		return svc.repository.Create(ctx, User{
+			ID:                uuid.New(),
+			UID:               kuser.UID,
+			Email:             kuser.Email,
+			Name:              convutil.ToPointer(kuser.Name),
+			PreferredUsername: convutil.ToPointer(kuser.PreferredUsername),
+			LastSignedInAt:    convutil.ToPointer(now),
+		})
+	}
+
+	existing.Email = kuser.Email
+	existing.Name = convutil.ToPointer(kuser.Name)
+	existing.PreferredUsername = convutil.ToPointer(kuser.PreferredUsername)
+	existing.LastSignedInAt = convutil.ToPointer(now)
+
+	return svc.repository.Update(ctx, *existing)
 }
