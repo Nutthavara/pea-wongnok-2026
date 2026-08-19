@@ -12,6 +12,7 @@ import (
 	"os/signal"
 	"syscall"
 	"wongnok/internal/config"
+	"wongnok/internal/httputil"
 	"wongnok/internal/middleware"
 	"wongnok/internal/platform/database"
 	"wongnok/internal/user"
@@ -24,12 +25,17 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-// @title			Wongnok API
-// @version		1.0
-// @description	API สำหรับจัดการกับระบบสูตรอาหาร
-// @host			localhost:8080
-// @BasePath		/api/v1
-// @schemas		http https
+//	@title			Wongnok API
+//	@version		1.0
+//	@description	API สำหรับจัดการกับระบบสูตรอาหาร
+//	@host			localhost:8080
+//	@BasePath		/api/v1
+//	@schemas		http https
+
+// @securityDefinitions.apikey	BearerAuth
+// @in							header
+// @name						Authorization
+// @description				พิมพ์ "Bearer" ตามด้วย space แล้วตามด้วย JWT token เช่น "Bearer eyJhbGci..."
 func main() {
 	if err := run(); err != nil {
 		slog.Error("service stopped", "error", err)
@@ -77,18 +83,33 @@ func run() error {
 	// Group version
 	v1 := router.Group("/api/v1")
 
-	// เพิ่ม option -u เข้าไปใน curl หรือใช้ Basic auth ใน Postman
-	// curl -u username:password ...
-	v1.Use(middleware.BasicAuthMiddleware())
+	// Auth resource
+	authRoute := v1.Group("/auth")
 
-	// Gin มี basic auth ให้ใช้งานได้เลย แต่ยกตัวอย่างการสร้าง middleware ให้เห็นภาพเฉย ๆ
-	// v1.Use(gin.BasicAuth(gin.Accounts{"admin": "secret"}))
+	// Inline code เพื่อ demo
+	authRoute.GET("/login", func(ctx *gin.Context) {
+		token, err := middleware.GenerateToken("user123")
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, httputil.ErrorResponse{Message: "cannot generate token"})
+			return
+		}
 
-	// curl -X GET http://localhost:8080/api/v1/users/{id}
-	v1.GET("/users/:id", userHandler.GetUser)
+		ctx.JSON(http.StatusOK, gin.H{"token": token})
+	})
+
+	// User resource
+	userRoute := v1.Group("/users")
+
+	// JWT Verify middleware
+	userRoute.Use(middleware.JWT())
+
+	// curl -X GET \
+	// -H "Authorization: Bearer {token}" \n
+	// http://localhost:8080/api/v1/users/:id
+	userRoute.GET("/:id", userHandler.GetUser)
 
 	// curl -X POST http://localhost:8080/api/v1/users -H "Content-Type: application/json" -d '{"email":"taro@devpool.pea"}'
-	v1.POST("/users", userHandler.CreateUser)
+	userRoute.POST("", userHandler.CreateUser)
 
 	// Register swagger
 	router.GET("swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
