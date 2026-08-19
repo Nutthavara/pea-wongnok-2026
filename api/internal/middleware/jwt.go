@@ -3,51 +3,31 @@ package middleware
 import (
 	"net/http"
 	"strings"
-	"time"
-	"wongnok/internal/httputil"
 
+	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 )
 
-const (
-	authPrefix = "Bearer "
-)
+const bearerPrefix = "Bearer "
 
-var jwtSecret = []byte("this-is-very-stronge-secret")
-
-func GenerateToken(userID string) (string, error) {
-	claims := Claims{
-		UserID: userID,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtSecret)
-}
-
-func JWT() gin.HandlerFunc {
+// [CHANGED] Refactor middleware
+func JWT(verifier *oidc.IDTokenVerifier) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authHeader := ctx.GetHeader("Authorization")
-		if !strings.HasPrefix(authHeader, authPrefix) {
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, httputil.ErrorResponse{Message: "missing token"})
+		if !strings.HasPrefix(authHeader, bearerPrefix) {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing token"})
 			return
 		}
 
-		tokenRaw := strings.TrimPrefix(authHeader, authPrefix)
-		claims := &Claims{}
+		rawToken := strings.TrimPrefix(authHeader, bearerPrefix)
 
-		token, err := jwt.ParseWithClaims(tokenRaw, claims, func(t *jwt.Token) (any, error) {
-			return jwtSecret, nil
-		})
-		if err != nil || !token.Valid {
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, httputil.ErrorResponse{Message: "invalid token"})
+		idToken, err := verifier.Verify(ctx.Request.Context(), rawToken)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+			return
 		}
 
-		ctx.Set("user_id", claims.UserID)
+		ctx.Set("subject", idToken.Subject)
 		ctx.Next()
 	}
 }

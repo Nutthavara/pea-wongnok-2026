@@ -15,6 +15,8 @@ var validate = validator.New(validator.WithRequiredStructEnabled())
 type Config struct {
 	App      App
 	Database Database
+	Redis    Redis
+	Keycloak Keycloak
 	Logging  Logging
 }
 
@@ -35,6 +37,8 @@ func (cfg Config) Validate() error {
 	return errors.Join(
 		cfg.App.Validate(),
 		cfg.Database.Validate(),
+		cfg.Redis.Validate(),
+		cfg.Keycloak.Validate(),
 		cfg.Logging.Validate(),
 	)
 }

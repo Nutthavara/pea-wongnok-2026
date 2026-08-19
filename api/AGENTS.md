@@ -21,3 +21,7 @@ goose create create_users sql
 พร้อม block `-- +goose Up` และ `-- +goose Down` ให้เติม SQL เอง
 
 ดูโครงสร้างตาราง/ความสัมพันธ์ของ domain ได้ที่ [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+
+## Testing
+
+ก่อนเขียนหรือรัน test ให้ดูข้อกำหนดใน [docs/TESTING.md](docs/TESTING.md)
