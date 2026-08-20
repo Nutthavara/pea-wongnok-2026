@@ -14,23 +14,23 @@ const (
 )
 
 type repository struct {
-	rdb *redis.Client
+	cache *redis.Client
 }
 
 func NewRepository(rdb *redis.Client) *repository {
 	return &repository{
-		rdb: rdb,
+		cache: rdb,
 	}
 }
 
 func (repo *repository) SaveState(ctx context.Context, state string, ttl time.Duration) error {
-	return repo.rdb.Set(ctx, (oauthPrefix + state), "1", ttl).Err()
+	return repo.cache.Set(ctx, (oauthPrefix + state), "1", ttl).Err()
 }
 
 func (repo *repository) ConsumeState(ctx context.Context, state string) error {
 	key := oauthPrefix + state
 
-	exists, err := repo.rdb.Exists(ctx, key).Result()
+	exists, err := repo.cache.Exists(ctx, key).Result()
 	if err != nil {
 		return err
 	}
@@ -39,7 +39,7 @@ func (repo *repository) ConsumeState(ctx context.Context, state string) error {
 		return ErrNotFound
 	}
 
-	return repo.rdb.Del(ctx, key).Err()
+	return repo.cache.Del(ctx, key).Err()
 }
 
 func (repo *repository) SaveTicket(ctx context.Context, ticket string, credential Credential, ttl time.Duration) error {
@@ -48,13 +48,13 @@ func (repo *repository) SaveTicket(ctx context.Context, ticket string, credentia
 		return err
 	}
 
-	return repo.rdb.Set(ctx, (oauthPrefix + ticket), payload, ttl).Err()
+	return repo.cache.Set(ctx, (oauthPrefix + ticket), payload, ttl).Err()
 }
 
 func (repo *repository) ConsumeTicket(ctx context.Context, ticket string) (Credential, error) {
 	key := oauthPrefix + ticket
 
-	payload, err := repo.rdb.Get(ctx, key).Bytes()
+	payload, err := repo.cache.Get(ctx, key).Bytes()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
 			return Credential{}, ErrNotFound
@@ -63,7 +63,7 @@ func (repo *repository) ConsumeTicket(ctx context.Context, ticket string) (Crede
 		return Credential{}, err
 	}
 
-	repo.rdb.Del(ctx, key)
+	repo.cache.Del(ctx, key)
 
 	var credential Credential
 	if err := json.Unmarshal(payload, &credential); err != nil {

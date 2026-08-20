@@ -15,6 +15,7 @@ type Repository interface {
 	FindByUID(ctx context.Context, uid string) (*User, error)
 	Create(ctx context.Context, user User) error
 	Update(ctx context.Context, user User) error
+	ResolveID(ctx context.Context, uid string) (uuid.UUID, error)
 }
 
 type service struct {
@@ -27,13 +28,8 @@ func NewService(repo Repository) *service {
 	}
 }
 
-func (svc *service) FindByID(ctx context.Context, id string) (*User, error) {
-	parsedID, err := uuid.Parse((id))
-	if err != nil {
-		return nil, ErrInvalidInput
-	}
-
-	return svc.repository.FindByID(ctx, parsedID)
+func (svc *service) FindByID(ctx context.Context, uid uuid.UUID) (*User, error) {
+	return svc.repository.FindByID(ctx, uid)
 }
 
 func (svc *service) UpsertFromKeycloak(ctx context.Context, kuser KeycloakUser) error {
@@ -61,4 +57,8 @@ func (svc *service) UpsertFromKeycloak(ctx context.Context, kuser KeycloakUser) 
 	existing.LastSignedInAt = convutil.ToPointer(now)
 
 	return svc.repository.Update(ctx, *existing)
+}
+
+func (svc *service) ResolveID(ctx context.Context, uid string) (uuid.UUID, error) {
+	return svc.repository.ResolveID(ctx, uid)
 }

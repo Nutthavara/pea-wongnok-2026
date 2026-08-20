@@ -3,6 +3,8 @@ package config
 import (
 	"log/slog"
 	"strings"
+
+	"gorm.io/gorm/logger"
 )
 
 type Logging struct {
@@ -18,6 +20,20 @@ func (logging Logging) SlogLevel() slog.Level {
 	}
 
 	return level
+}
+
+// [CHANGE] gorm logger
+func (l Logging) GormLogLevel() logger.LogLevel {
+	switch l.Level {
+	case "DEBUG":
+		return logger.Info
+	case "WARN":
+		return logger.Warn
+	case "ERROR":
+		return logger.Error
+	default:
+		return logger.Warn
+	}
 }
 
 func (logging Logging) Validate() error {

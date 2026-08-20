@@ -5,12 +5,14 @@ import (
 	"errors"
 	"net/http"
 	"wongnok/internal/httputil"
+	"wongnok/internal/reqctx"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type Service interface {
-	FindByID(ctx context.Context, id string) (*User, error)
+	FindByID(ctx context.Context, uid uuid.UUID) (*User, error)
 }
 
 type handler struct {
@@ -37,7 +39,17 @@ func NewHandler(service Service) *handler {
 //	@Failure		500	{object}	httputil.ErrorResponse
 //	@Router			/users/{id} [get]
 func (hdr *handler) GetUser(ctx *gin.Context) {
-	uid := ctx.Param("id")
+	id := ctx.Param("id")
+	if id != "me" {
+		ctx.AbortWithStatusJSON(http.StatusNotFound, httputil.ErrorResponse{Message: "not found"})
+		return
+	}
+
+	uid, ok := reqctx.UserID(ctx.Request.Context())
+	if !ok {
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, httputil.ErrorResponse{Message: "user not found"})
+		return
+	}
 
 	user, err := hdr.service.FindByID(ctx, uid)
 	if err != nil {

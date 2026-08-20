@@ -56,25 +56,26 @@ func run() error {
 	}
 
 	// Setup logger
-	slog.SetDefault(newLogger(os.Stdout, cfg.App.Name, cfg.Logging))
+	logger := newLogger(os.Stdout, cfg.App.Name, cfg.Logging)
+	slog.SetDefault(logger)
 
 	// Signal context
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
 	// Database connection
-	db, sqldb, err := database.Open(ctx, cfg.Database.PostgresDSN)
+	db, sqldb, err := database.Open(ctx, cfg.Database.PostgresDSN, cfg.Logging)
 	if err != nil {
 		log.Fatal("database connection:", err)
 	}
 	defer sqldb.Close()
 
 	// Redis connection
-	rdb, err := cache.Open(ctx, cfg.Redis)
+	cache, err := cache.Open(ctx, cfg.Redis)
 	if err != nil {
 		return fmt.Errorf("connect redis: %w", err)
 	}
-	defer rdb.Close()
+	defer cache.Close()
 
 	// Discovery from Keycloak
 	oidcProvider, err := oidc.NewProvider(ctx, cfg.Keycloak.RealmURL())
@@ -85,11 +86,11 @@ func run() error {
 	oidcVerifer := oidcProvider.Verifier(&oidc.Config{ClientID: cfg.Keycloak.ClientID})
 
 	// Dependency injection
-	userRepo := user.NewRepository(db)
+	userRepo := user.NewRepository(db, cache)
 	userService := user.NewService(userRepo)
 	userHandler := user.NewHandler(userService)
 
-	authRepo := auth.NewRepository(rdb)
+	authRepo := auth.NewRepository(cache)
 	authService := auth.NewService(authRepo, userService, auth.KeycloakDeps{
 		Config:   cfg.Keycloak,
 		Provider: oidcProvider,
@@ -118,7 +119,7 @@ func run() error {
 
 	// User resource
 	userGroup := v1.Group("/users")
-	userGroup.Use(middleware.JWT(oidcVerifer))
+	userGroup.Use(middleware.JWT(oidcVerifer, userService))
 	userGroup.GET("/:id", userHandler.GetUser)
 
 	// Register swagger
