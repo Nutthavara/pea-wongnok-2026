@@ -116,6 +116,24 @@ erDiagram
 (string, not null), `created_at`/`updated_at` (datetime, not null) และ `deleted_at`
 (datetime, nullable) เพื่อรองรับ soft delete
 
+#### Master data / migration seed
+
+`difficulties` และ `durations` เป็น master data โดย migration ที่สร้างแต่ละตาราง
+ต้อง seed รายการต่อไปนี้เมื่อ migration ทำงาน:
+
+| Table          | `id`     | `name`           |
+| -------------- | -------- | ---------------- |
+| `difficulties` | `easy`   | Easy             |
+| `difficulties` | `medium` | Medium           |
+| `difficulties` | `hard`   | Hard             |
+| `durations`    | `10m`    | 5 - 10 mins      |
+| `durations`    | `30m`    | 10 - 30 mins     |
+| `durations`    | `60m`    | ~1 Hour          |
+| `durations`    | `long`   | More than 1 hour |
+
+ค่า `id` เหล่านี้เป็นค่าคงที่ (stable values) ที่ `recipes.difficulty_id` และ
+`recipes.duration_id` ใช้อ้างอิง จึงต้องไม่เปลี่ยนแปลง.
+
 ### `recipes`
 
 | Column                     | Type     | Constraints / Notes                                       |
