@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -150,6 +152,22 @@ func (repo *repository) FindByID(ctx context.Context, id int) (*Recipe, error) {
 	}
 
 	return &recipe, nil
+}
+
+func (repo *repository) Favorite(ctx context.Context, userID uuid.UUID, recipeID int) error {
+	favorite := UserFavorite{UserID: userID, RecipeID: recipeID}
+
+	if err := repo.db.WithContext(ctx).Clauses(clause.OnConflict{
+		Columns: []clause.Column{{Name: "user_id"}, {Name: "recipe_id"}},
+		DoUpdates: clause.Assignments(map[string]any{
+			"deleted_at": nil,
+			"updated_at": time.Now(),
+		}),
+	}).Create(&favorite).Error; err != nil {
+		return fmt.Errorf("favorite recipe %d: %w", recipeID, err)
+	}
+
+	return nil
 }
 
 func (repo *repository) DifficultyExists(ctx context.Context, id string) (bool, error) {

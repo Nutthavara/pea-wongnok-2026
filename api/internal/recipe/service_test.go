@@ -160,6 +160,27 @@ func TestServiceDeleteRejectsAnotherUsersRecipe(t *testing.T) {
 	assert.ErrorIs(t, err, ErrForbidden)
 }
 
+func TestServiceFavoriteAddsRecipeToCallerFavorites(t *testing.T) {
+	repo := NewMockRepository(t)
+	userID := uuid.New()
+	repo.EXPECT().Favorite(mock.Anything, userID, 42).Return(nil)
+
+	err := NewService(repo).Favorite(context.Background(), 42, userID)
+
+	assert.NoError(t, err)
+}
+
+func TestServiceFavoritePropagatesRepositoryFailure(t *testing.T) {
+	repo := NewMockRepository(t)
+	userID := uuid.New()
+	expected := errors.New("database unavailable")
+	repo.EXPECT().Favorite(mock.Anything, userID, 42).Return(expected)
+
+	err := NewService(repo).Favorite(context.Background(), 42, userID)
+
+	assert.ErrorIs(t, err, expected)
+}
+
 func TestServiceCreateAssignsCreatorBeforePersistence(t *testing.T) {
 	repo := NewMockRepository(t)
 	creatorID := uuid.New()

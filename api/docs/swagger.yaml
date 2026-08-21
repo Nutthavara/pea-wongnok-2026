@@ -540,6 +540,36 @@ paths:
       summary: แก้ไขสูตรอาหารทั้งหมด
       tags:
       - recipes
+  /recipes/{id}/favorite:
+    post:
+      description: เพิ่มสูตรอาหารที่ระบุเข้ารายการโปรดของผู้ใช้ที่ยืนยันตัวตนแล้ว
+        หากเคยเพิ่มไว้แล้วจะไม่มีผลซ้ำ
+      parameters:
+      - description: Recipe ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/wongnok_internal_httputil.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/wongnok_internal_httputil.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/wongnok_internal_httputil.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: เพิ่มสูตรอาหารในรายการโปรด
+      tags:
+      - recipes
   /users/{id}:
     get:
       description: ค้นหาข้อมูล User จาก UUID แล้วคืนข้อมูล User ที่เจอกลับมา
@@ -579,7 +609,7 @@ paths:
       description: แก้ไข imageUrl และ bio ของผู้ใช้ที่กำลังเข้าสู่ระบบ (name และ email
         มาจาก Keycloak แก้ไขผ่าน API นี้ไม่ได้)
       parameters:
-      - description: User ID (UUID); only \
+      - description: User ID
         in: path
         name: id
         required: true

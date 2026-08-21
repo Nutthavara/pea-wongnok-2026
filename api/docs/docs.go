@@ -514,6 +514,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/recipes/{id}/favorite": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "เพิ่มสูตรอาหารที่ระบุเข้ารายการโปรดของผู้ใช้ที่ยืนยันตัวตนแล้ว หากเคยเพิ่มไว้แล้วจะไม่มีผลซ้ำ",
+                "tags": [
+                    "recipes"
+                ],
+                "summary": "เพิ่มสูตรอาหารในรายการโปรด",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Recipe ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/wongnok_internal_httputil.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/wongnok_internal_httputil.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/wongnok_internal_httputil.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/users/{id}": {
             "get": {
                 "security": [
@@ -585,7 +631,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "User ID (UUID); only \\",
+                        "description": "User ID",
                         "name": "id",
                         "in": "path",
                         "required": true

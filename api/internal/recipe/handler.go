@@ -18,6 +18,7 @@ type Service interface {
 	Get(ctx context.Context, id int) (*Recipe, error)
 	Replace(ctx context.Context, id int, userID uuid.UUID, recipe Recipe) (*Recipe, error)
 	Delete(ctx context.Context, id int, userID uuid.UUID) error
+	Favorite(ctx context.Context, id int, userID uuid.UUID) error
 }
 
 type handler struct {
@@ -202,6 +203,39 @@ func (hdr *handler) Replace(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, NewRecipeResponse(*recipe))
+}
+
+// Favorite godoc
+//
+//	@Summary		เพิ่มสูตรอาหารในรายการโปรด
+//	@Description	เพิ่มสูตรอาหารที่ระบุเข้ารายการโปรดของผู้ใช้ที่ยืนยันตัวตนแล้ว หากเคยเพิ่มไว้แล้วจะไม่มีผลซ้ำ
+//	@Tags			recipes
+//	@Security		BearerAuth
+//	@Param			id	path	int	true	"Recipe ID"
+//	@Success		204
+//	@Failure		400	{object}	httputil.ErrorResponse
+//	@Failure		401	{object}	httputil.ErrorResponse
+//	@Failure		500	{object}	httputil.ErrorResponse
+//	@Router			/recipes/{id}/favorite [post]
+func (hdr *handler) Favorite(ctx *gin.Context) {
+	userID, ok := reqctx.UserID(ctx.Request.Context())
+	if !ok {
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, httputil.ErrorResponse{Message: "unauthorized"})
+		return
+	}
+
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, httputil.ErrorResponse{Message: "invalid request"})
+		return
+	}
+
+	if err := hdr.service.Favorite(ctx.Request.Context(), id, userID); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, httputil.ErrorResponse{Message: "internal server error"})
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
 }
 
 // Delete godoc

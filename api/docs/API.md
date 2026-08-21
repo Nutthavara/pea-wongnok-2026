@@ -34,12 +34,13 @@ Recipe:
   "ingredients": [{ "id": 101, "description": "2 cups stock" }],
   "instructions": [{ "id": 201, "description": "Bring the stock to a simmer." }],
   "creator": { "id": "3f0c1a7e-2b19-4c5e-9f3a-000000000000", "name": "Somchai" },
+  "isFavorite": false,
   "createdAt": "2026-08-20T10:00:00Z",
   "updatedAt": "2026-08-20T10:00:00Z"
 }
 ```
 
-`imageUrl` is `null` when absent. `creator.name` is a string. Only active ingredients and instructions are returned; no `deletedAt` field is exposed.
+`imageUrl` is `null` when absent. `creator.name` is a string. Only active ingredients and instructions are returned; no `deletedAt` field is exposed. `isFavorite` is `true` when the authenticated caller has favorited this recipe (a matching row exists in `user_favorites`), `false` otherwise — see [Favorites](#favorites).
 
 Create and replace use a complete write body. `name`, `description`, `difficultyId`, `durationId`, `ingredients`, and `instructions` are required; `imageUrl` is optional. Ingredient/instruction arrays may be empty, and each item has a required non-empty `description`.
 
@@ -128,15 +129,16 @@ An invalid/malformed body and an unresolvable `difficultyId`/`durationId` both c
 
 Requires `Authorization: Bearer <access-token>` like all recipe routes — this list endpoint is not public. Returns only active recipes.
 
-| Parameter    | Type            | Meaning                                                              |
-| ------------ | --------------- | -------------------------------------------------------------------- |
-| `name`       | string          | Optional case-insensitive substring filter on recipe name            |
-| `difficulty` | string          | Optional difficulty ID filter; must reference an existing difficulty |
-| `sort`       | `ASC` or `DESC` | Case-sensitive; orders by `createdAt`; default `DESC`                |
-| `page`       | int             | Optional, minimum 1, default 1                                       |
-| `limit`      | int             | Optional, 1-100, default 12                                          |
+| Parameter    | Type            | Meaning                                                                        |
+| ------------ | --------------- | ------------------------------------------------------------------------------ |
+| `name`       | string          | Optional case-insensitive substring filter on recipe name                      |
+| `difficulty` | string          | Optional difficulty ID filter; must reference an existing difficulty           |
+| `favorite`   | boolean         | Optional; when `true`, returns only recipes the authenticated caller favorited |
+| `sort`       | `ASC` or `DESC` | Case-sensitive; orders by `createdAt`; default `DESC`                          |
+| `page`       | int             | Optional, minimum 1, default 1                                                 |
+| `limit`      | int             | Optional, 1-100, default 12                                                    |
 
-The success body is `{ "total": 1, "results": [<complete-recipe>, ...] }`; `total` is the count after all filters.
+The success body is `{ "total": 1, "results": [<complete-recipe>, ...] }`; `total` is the count after all filters. Each recipe in `results` includes `isFavorite` (see [Representations](#representations)); when `favorite=true` every returned recipe has `isFavorite: true`.
 
 | Status | Meaning                                                                                        |
 | ------ | ---------------------------------------------------------------------------------------------- |
@@ -176,6 +178,36 @@ Known current limitation: `page` has no effect on the returned rows (a server-si
 | 500    | Error body                          |
 
 For update and delete, ownership is checked after locating an active recipe: another user's active recipe returns `403`; missing or soft-deleted recipes return `404`.
+
+## Favorites
+
+Favoriting is per-user: it marks a `(user_id, recipe_id)` row in `user_favorites` for the authenticated caller. There is no database uniqueness constraint on that pair — duplicate prevention is an application-level check, not a schema-level one. See [`GET /recipes`](#get-recipes) for reading favorite status (the `favorite` filter and the `isFavorite` field on each recipe).
+
+### `POST /recipes/{recipeId}/favorite`
+
+`recipeId` is a required integer. Adds the recipe to the authenticated caller's favorites.
+
+| Status | Meaning                     |
+| ------ | --------------------------- |
+| 204    | Favorited; no response body |
+| 400    | Invalid `recipeId`          |
+| 401    | Error body                  |
+| 500    | Error body                  |
+
+Calling this repeatedly for the same recipe is a no-op after the first call: if a `user_favorites` row for this `(user_id, recipe_id)` pair already exists, no duplicate row is inserted and the response is still `204`.
+
+### `DELETE /recipes/{recipeId}/favorite`
+
+`recipeId` is a required integer. Removes the recipe from the authenticated caller's favorites.
+
+| Status | Meaning                                                  |
+| ------ | -------------------------------------------------------- |
+| 200    | Unfavorited (or already not favorited); no response body |
+| 400    | Invalid `recipeId`                                       |
+| 401    | Error body                                               |
+| 500    | Error body                                               |
+
+Unlike recipe deletion, this returns `200`, not `204`. If no matching `user_favorites` row exists, the response is still `200` — not `404`.
 
 ## Users
 

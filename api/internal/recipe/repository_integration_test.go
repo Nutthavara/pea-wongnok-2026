@@ -316,6 +316,54 @@ func TestRepositoryHasActiveReferences(t *testing.T) {
 	})
 }
 
+func TestRepositoryFavorite(t *testing.T) {
+	db := newIntegrationDB(t)
+	repo := NewRepository(db)
+	userID := createCreator(t, db)
+	creatorID := createCreator(t, db)
+
+	created, err := repo.Create(context.Background(), Recipe{
+		Name:         "Tom yum soup",
+		Description:  "A bright, spicy Thai soup.",
+		DifficultyID: "medium",
+		DurationID:   "30m",
+		CreatorID:    creatorID,
+	})
+	require.NoError(t, err)
+
+	t.Run("new favorite", func(t *testing.T) {
+		require.NoError(t, repo.Favorite(context.Background(), userID, created.ID))
+
+		var count int64
+		require.NoError(t, db.Model(&UserFavorite{}).Where("user_id = ? AND recipe_id = ?", userID, created.ID).Count(&count).Error)
+		assert.EqualValues(t, 1, count)
+	})
+
+	t.Run("already favorited recipe", func(t *testing.T) {
+		require.NoError(t, repo.Favorite(context.Background(), userID, created.ID))
+
+		var count int64
+		require.NoError(t, db.Model(&UserFavorite{}).Where("user_id = ? AND recipe_id = ?", userID, created.ID).Count(&count).Error)
+		assert.EqualValues(t, 1, count)
+	})
+
+	t.Run("re-favoriting an unfavorited recipe undoes the soft delete", func(t *testing.T) {
+		require.NoError(t, db.Model(&UserFavorite{}).Where("user_id = ? AND recipe_id = ?", userID, created.ID).Update("deleted_at", "now()").Error)
+
+		require.NoError(t, repo.Favorite(context.Background(), userID, created.ID))
+
+		var deletedAt gorm.DeletedAt
+		require.NoError(t, db.Unscoped().Model(&UserFavorite{}).Where("user_id = ? AND recipe_id = ?", userID, created.ID).Select("deleted_at").Scan(&deletedAt).Error)
+		assert.False(t, deletedAt.Valid)
+	})
+
+	t.Run("missing recipe", func(t *testing.T) {
+		err := repo.Favorite(context.Background(), userID, created.ID+1000)
+
+		assert.Error(t, err)
+	})
+}
+
 func newIntegrationDB(t *testing.T) *gorm.DB {
 	t.Helper()
 	ctx := context.Background()

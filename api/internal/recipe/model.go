@@ -63,3 +63,12 @@ type RecipeInstruction struct {
 	UpdatedAt   time.Time
 	DeletedAt   gorm.DeletedAt
 }
+
+type UserFavorite struct {
+	UserID    uuid.UUID `gorm:"primaryKey"`
+	RecipeID  int       `gorm:"primaryKey"`
+	Recipe    Recipe    `gorm:"foreignKey:RecipeID;references:ID"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt
+}
