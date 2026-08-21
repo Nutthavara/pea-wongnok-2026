@@ -111,11 +111,13 @@ Send the complete write body. The authenticated user becomes the creator.
 
 Returns only active recipes; there is no pagination.
 
-| Parameter    | Type            | Meaning                                  |
-| ------------ | --------------- | ---------------------------------------- |
-| `name`       | string          | Optional substring filter on recipe name |
-| `difficulty` | string          | Optional difficulty ID filter            |
-| `sort`       | `asc` or `desc` | Orders by `createdAt`; default `desc`    |
+| Parameter    | Type            | Meaning                                     |
+| ------------ | --------------- | ------------------------------------------- |
+| `name`       | string          | Optional substring filter on recipe name    |
+| `difficulty` | string          | Optional difficulty ID filter               |
+| `sort`       | `ASC` or `DESC` | Orders by `createdAt`; default `DESC`       |
+| `page`       | int             | Optional page of pagination, default 1      |
+| `limit`      | int             | Optional limit recipes per page, default 12 |
 
 The success body is `{ "total": 1, "results": [<complete-recipe>, ...] }`; `total` is the count after all filters.
 

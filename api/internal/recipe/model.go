@@ -31,7 +31,9 @@ type Recipe struct {
 	Description   string
 	ImageURL      *string
 	DifficultyID  string
+	Difficulty    Difficulty
 	DurationID    string
+	Duration      Duration
 	AverageRating float64
 	CreatorID     uuid.UUID
 	Creator       user.User `gorm:"foreignKey:CreatorID;references:ID"`

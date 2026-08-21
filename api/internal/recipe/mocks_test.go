@@ -112,6 +112,80 @@ func (_c *MockService_Create_Call) RunAndReturn(run func(ctx context.Context, cr
 	return _c
 }
 
+// List provides a mock function for the type MockService
+func (_mock *MockService) List(ctx context.Context, query GetRecipesQuery) ([]Recipe, int64, error) {
+	ret := _mock.Called(ctx, query)
+
+	if len(ret) == 0 {
+		panic("no return value specified for List")
+	}
+
+	var r0 []Recipe
+	var r1 int64
+	var r2 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, GetRecipesQuery) ([]Recipe, int64, error)); ok {
+		return returnFunc(ctx, query)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, GetRecipesQuery) []Recipe); ok {
+		r0 = returnFunc(ctx, query)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]Recipe)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, GetRecipesQuery) int64); ok {
+		r1 = returnFunc(ctx, query)
+	} else {
+		r1 = ret.Get(1).(int64)
+	}
+	if returnFunc, ok := ret.Get(2).(func(context.Context, GetRecipesQuery) error); ok {
+		r2 = returnFunc(ctx, query)
+	} else {
+		r2 = ret.Error(2)
+	}
+	return r0, r1, r2
+}
+
+// MockService_List_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'List'
+type MockService_List_Call struct {
+	*mock.Call
+}
+
+// List is a helper method to define mock.On call
+//   - ctx context.Context
+//   - query GetRecipesQuery
+func (_e *MockService_Expecter) List(ctx any, query any) *MockService_List_Call {
+	return &MockService_List_Call{Call: _e.mock.On("List", ctx, query)}
+}
+
+func (_c *MockService_List_Call) Run(run func(ctx context.Context, query GetRecipesQuery)) *MockService_List_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 GetRecipesQuery
+		if args[1] != nil {
+			arg1 = args[1].(GetRecipesQuery)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockService_List_Call) Return(recipes []Recipe, n int64, err error) *MockService_List_Call {
+	_c.Call.Return(recipes, n, err)
+	return _c
+}
+
+func (_c *MockService_List_Call) RunAndReturn(run func(ctx context.Context, query GetRecipesQuery) ([]Recipe, int64, error)) *MockService_List_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewMockRepository creates a new instance of MockRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewMockRepository(t interface {
@@ -207,6 +281,72 @@ func (_c *MockRepository_Create_Call) RunAndReturn(run func(ctx context.Context,
 	return _c
 }
 
+// DifficultyExists provides a mock function for the type MockRepository
+func (_mock *MockRepository) DifficultyExists(ctx context.Context, id string) (bool, error) {
+	ret := _mock.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DifficultyExists")
+	}
+
+	var r0 bool
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (bool, error)); ok {
+		return returnFunc(ctx, id)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) bool); ok {
+		r0 = returnFunc(ctx, id)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = returnFunc(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockRepository_DifficultyExists_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DifficultyExists'
+type MockRepository_DifficultyExists_Call struct {
+	*mock.Call
+}
+
+// DifficultyExists is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id string
+func (_e *MockRepository_Expecter) DifficultyExists(ctx any, id any) *MockRepository_DifficultyExists_Call {
+	return &MockRepository_DifficultyExists_Call{Call: _e.mock.On("DifficultyExists", ctx, id)}
+}
+
+func (_c *MockRepository_DifficultyExists_Call) Run(run func(ctx context.Context, id string)) *MockRepository_DifficultyExists_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_DifficultyExists_Call) Return(b bool, err error) *MockRepository_DifficultyExists_Call {
+	_c.Call.Return(b, err)
+	return _c
+}
+
+func (_c *MockRepository_DifficultyExists_Call) RunAndReturn(run func(ctx context.Context, id string) (bool, error)) *MockRepository_DifficultyExists_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // HasActiveReferences provides a mock function for the type MockRepository
 func (_mock *MockRepository) HasActiveReferences(ctx context.Context, difficultyID string, durationID string) (bool, error) {
 	ret := _mock.Called(ctx, difficultyID, durationID)
@@ -275,6 +415,80 @@ func (_c *MockRepository_HasActiveReferences_Call) Return(b bool, err error) *Mo
 }
 
 func (_c *MockRepository_HasActiveReferences_Call) RunAndReturn(run func(ctx context.Context, difficultyID string, durationID string) (bool, error)) *MockRepository_HasActiveReferences_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// List provides a mock function for the type MockRepository
+func (_mock *MockRepository) List(ctx context.Context, query GetRecipesQuery) ([]Recipe, int64, error) {
+	ret := _mock.Called(ctx, query)
+
+	if len(ret) == 0 {
+		panic("no return value specified for List")
+	}
+
+	var r0 []Recipe
+	var r1 int64
+	var r2 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, GetRecipesQuery) ([]Recipe, int64, error)); ok {
+		return returnFunc(ctx, query)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, GetRecipesQuery) []Recipe); ok {
+		r0 = returnFunc(ctx, query)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]Recipe)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, GetRecipesQuery) int64); ok {
+		r1 = returnFunc(ctx, query)
+	} else {
+		r1 = ret.Get(1).(int64)
+	}
+	if returnFunc, ok := ret.Get(2).(func(context.Context, GetRecipesQuery) error); ok {
+		r2 = returnFunc(ctx, query)
+	} else {
+		r2 = ret.Error(2)
+	}
+	return r0, r1, r2
+}
+
+// MockRepository_List_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'List'
+type MockRepository_List_Call struct {
+	*mock.Call
+}
+
+// List is a helper method to define mock.On call
+//   - ctx context.Context
+//   - query GetRecipesQuery
+func (_e *MockRepository_Expecter) List(ctx any, query any) *MockRepository_List_Call {
+	return &MockRepository_List_Call{Call: _e.mock.On("List", ctx, query)}
+}
+
+func (_c *MockRepository_List_Call) Run(run func(ctx context.Context, query GetRecipesQuery)) *MockRepository_List_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 GetRecipesQuery
+		if args[1] != nil {
+			arg1 = args[1].(GetRecipesQuery)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_List_Call) Return(recipes []Recipe, n int64, err error) *MockRepository_List_Call {
+	_c.Call.Return(recipes, n, err)
+	return _c
+}
+
+func (_c *MockRepository_List_Call) RunAndReturn(run func(ctx context.Context, query GetRecipesQuery) ([]Recipe, int64, error)) *MockRepository_List_Call {
 	_c.Call.Return(run)
 	return _c
 }
