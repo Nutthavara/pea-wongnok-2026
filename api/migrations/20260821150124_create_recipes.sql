@@ -3,7 +3,7 @@ CREATE TABLE recipes (
   id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   description TEXT NOT NULL,
-  image_url VARCHAR(255),
+  image_url TEXT,
   difficulty_id VARCHAR(255) REFERENCES difficulties (id),
   duration_id VARCHAR(255) REFERENCES durations (id),
   average_rating DOUBLE PRECISION NOT NULL DEFAULT 0,

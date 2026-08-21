@@ -31,6 +31,7 @@ erDiagram
         string uid UK
         string name
         text bio
+        text image_url
         string preferred_username
         datetime last_signed_in_at
         datetime deleted_at
@@ -49,7 +50,7 @@ erDiagram
         integer id PK
         string name
         text description
-        string image_url
+        text image_url
         string difficulty_id FK
         string duration_id FK
         float average_rating
@@ -105,6 +106,7 @@ erDiagram
 | `name`                     | string   | nullable              |
 | `bio`                      | text     | nullable              |
 | `uid`                      | uid      | not null; unique      |
+| `image_url`                | text     | nullable              |
 | `preferred_username`       | string   | nullable              |
 | `last_signed_in_at`        | datetime | nullable              |
 | `created_at`, `updated_at` | datetime | not null              |
@@ -141,7 +143,7 @@ erDiagram
 | `id`                       | integer  | primary key, not null                                     |
 | `name`                     | string   | not null                                                  |
 | `description`              | text     | not null                                                  |
-| `image_url`                | string   | nullable                                                  |
+| `image_url`                | text     | nullable                                                  |
 | `difficulty_id`            | string   | foreign key → `difficulties.id`; nullable ตาม schema ที่ระบุ |
 | `duration_id`              | string   | foreign key → `durations.id`; nullable ตาม schema ที่ระบุ    |
 | `average_rating`           | float    | not null; default `0`                                     |
