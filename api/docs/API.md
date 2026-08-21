@@ -1,6 +1,6 @@
 # Recipe API contract
 
-This hand-authored contract covers recipe and reference-data endpoints being implemented. Generated Swagger files intentionally describe only implemented routes.
+This hand-authored contract covers recipe endpoints (fully implemented) and reference-data endpoints (contract only — not yet implemented, see [Reference data](#reference-data)). Generated Swagger files intentionally describe only implemented routes.
 
 ## Conventions
 
@@ -58,6 +58,8 @@ Create and replace use a complete write body. `name`, `description`, `difficulty
 `difficultyId` and `durationId` must reference active master-data records; otherwise the response is `400 invalid_request` (not `404`, despite the name). The `ingredients`/`instructions` keys must be present in the body — an explicit `[]` is fine, but omitting the key or sending `null` fails validation. When present, `imageUrl` must be a valid URL.
 
 ## Reference data
+
+**Not implemented yet.** No route, handler, service, or repository exists for `/difficulties` or `/durations` — calling them currently 404s at the router level (no matching route), not via the handler's own 404 logic. `difficulties` and `durations` tables exist (with the seed rows below) and are already read internally by the recipe package (`Repository.HasActiveReferences`, `Repository.DifficultyExists`) to validate `difficultyId`/`durationId` on recipe writes and the `difficulty` list filter — only the standalone list endpoints described below are missing. The contract below is the target shape for when they're built.
 
 ### `GET /difficulties`
 
