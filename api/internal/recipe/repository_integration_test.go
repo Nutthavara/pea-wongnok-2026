@@ -234,6 +234,38 @@ func TestRepositoryFindByID(t *testing.T) {
 	})
 }
 
+func TestRepositoryFindByIDReturnsRatingTotal(t *testing.T) {
+	db := newIntegrationDB(t)
+	repo := NewRepository(db)
+	creatorID := createCreator(t, db)
+
+	created, err := repo.Create(context.Background(), Recipe{
+		Name:         "Tom yum soup",
+		Description:  "A bright, spicy Thai soup.",
+		DifficultyID: "medium",
+		DurationID:   "30m",
+		CreatorID:    creatorID,
+	})
+	require.NoError(t, err)
+
+	t.Run("no ratings yet", func(t *testing.T) {
+		found, err := repo.FindByID(context.Background(), created.ID)
+
+		require.NoError(t, err)
+		assert.Zero(t, found.RatingTotal)
+	})
+
+	t.Run("after ratings are recorded", func(t *testing.T) {
+		require.NoError(t, repo.Rate(context.Background(), createCreator(t, db), created.ID, 4))
+		require.NoError(t, repo.Rate(context.Background(), createCreator(t, db), created.ID, 5))
+
+		found, err := repo.FindByID(context.Background(), created.ID)
+
+		require.NoError(t, err)
+		assert.EqualValues(t, 2, found.RatingTotal)
+	})
+}
+
 func TestRepositoryIsFavorite(t *testing.T) {
 	db := newIntegrationDB(t)
 	repo := NewRepository(db)
@@ -357,6 +389,20 @@ func TestRepositoryList(t *testing.T) {
 		require.NoError(t, err)
 		assert.EqualValues(t, 2, total)
 		require.Len(t, recipes, 2)
+	})
+
+	t.Run("includes rating total per recipe", func(t *testing.T) {
+		require.NoError(t, repo.Rate(context.Background(), createCreator(t, db), favorited.ID, 5))
+
+		recipes, _, err := repo.List(context.Background(), userID, GetRecipesQuery{Pagination: Pagination{Page: 1, Limit: 100}})
+
+		require.NoError(t, err)
+		ratingTotalByID := make(map[int]int64, len(recipes))
+		for _, recipe := range recipes {
+			ratingTotalByID[recipe.ID] = recipe.RatingTotal
+		}
+		assert.EqualValues(t, 1, ratingTotalByID[favorited.ID])
+		assert.Zero(t, ratingTotalByID[notFavorited.ID])
 	})
 }
 

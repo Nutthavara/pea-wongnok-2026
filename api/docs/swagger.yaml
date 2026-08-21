@@ -113,6 +113,13 @@ definitions:
     required:
     - rating
     type: object
+  internal_recipe.RatingResponse:
+    properties:
+      average:
+        type: number
+      total:
+        type: integer
+    type: object
   internal_recipe.RecipeIngredientRequest:
     properties:
       description:
@@ -155,6 +162,8 @@ definitions:
         type: boolean
       name:
         type: string
+      rating:
+        $ref: '#/definitions/internal_recipe.RatingResponse'
       updatedAt:
         type: string
     type: object

@@ -955,6 +955,17 @@
                 }
             }
         },
+        "internal_recipe.RatingResponse": {
+            "type": "object",
+            "properties": {
+                "average": {
+                    "type": "number"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
         "internal_recipe.RecipeIngredientRequest": {
             "type": "object",
             "required": [
@@ -1018,6 +1029,9 @@
                 },
                 "name": {
                     "type": "string"
+                },
+                "rating": {
+                    "$ref": "#/definitions/internal_recipe.RatingResponse"
                 },
                 "updatedAt": {
                     "type": "string"

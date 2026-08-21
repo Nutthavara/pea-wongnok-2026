@@ -1,6 +1,9 @@
 package recipe
 
-import "time"
+import (
+	"math"
+	"time"
+)
 
 type CreateRecipeRequest struct {
 	Name         string                      `json:"name" binding:"required"`
@@ -133,6 +136,11 @@ type InstructionResponse struct {
 	Description string `json:"description"`
 }
 
+type RatingResponse struct {
+	Average float64 `json:"average"`
+	Total   int64   `json:"total"`
+}
+
 type RecipeResponse struct {
 	ID           int                   `json:"id"`
 	Name         string                `json:"name"`
@@ -144,6 +152,7 @@ type RecipeResponse struct {
 	Instructions []InstructionResponse `json:"instructions"`
 	Creator      CreatorResponse       `json:"creator"`
 	IsFavorite   bool                  `json:"isFavorite"`
+	Rating       RatingResponse        `json:"rating"`
 	CreatedAt    time.Time             `json:"createdAt"`
 	UpdatedAt    time.Time             `json:"updatedAt"`
 }
@@ -185,8 +194,12 @@ func NewRecipeResponse(recipe Recipe) RecipeResponse {
 			Name: *recipe.Creator.Name,
 		},
 		IsFavorite: recipe.IsFavorite,
-		CreatedAt:  recipe.CreatedAt,
-		UpdatedAt:  recipe.UpdatedAt,
+		Rating: RatingResponse{
+			Average: math.Round((recipe.AverageRating * 10)) / 10,
+			Total:   recipe.RatingTotal,
+		},
+		CreatedAt: recipe.CreatedAt,
+		UpdatedAt: recipe.UpdatedAt,
 	}
 }
 

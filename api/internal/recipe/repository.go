@@ -151,6 +151,13 @@ func (repo *repository) FindByID(ctx context.Context, id int) (*Recipe, error) {
 		return nil, fmt.Errorf("find recipe %d: %w", id, err)
 	}
 
+	var ratingTotal int64
+	if err := repo.db.WithContext(ctx).Model(&RecipeRating{}).Where("recipe_id = ?", id).Count(&ratingTotal).Error; err != nil {
+		return nil, fmt.Errorf("count ratings for recipe %d: %w", id, err)
+	}
+
+	recipe.RatingTotal = ratingTotal
+
 	return &recipe, nil
 }
 
@@ -269,11 +276,52 @@ func (repo *repository) List(ctx context.Context, userID uuid.UUID, query GetRec
 	if err != nil {
 		return nil, 0, fmt.Errorf("list recipes: %w", err)
 	}
+
+	ratingTotals, err := repo.ratingTotals(ctx, recipes)
+	if err != nil {
+		return nil, 0, fmt.Errorf("list recipes: %w", err)
+	}
+
 	for index := range recipes {
 		recipes[index].IsFavorite = favorited[recipes[index].ID]
+		recipes[index].RatingTotal = ratingTotals[recipes[index].ID]
 	}
 
 	return recipes, total, nil
+}
+
+func (repo *repository) ratingTotals(ctx context.Context, recipes []Recipe) (map[int]int64, error) {
+	if len(recipes) == 0 {
+		return map[int]int64{}, nil
+	}
+
+	ids := make([]int, len(recipes))
+	for index, recipe := range recipes {
+		ids[index] = recipe.ID
+	}
+
+	var rows []struct {
+		RecipeID int
+		Total    int64
+	}
+
+	// Model
+	db := repo.db.WithContext(ctx).Model(&RecipeRating{})
+
+	// Where
+	db = db.Select("recipe_id, COUNT(*) AS total").Where("recipe_id IN ?", ids)
+
+	// Scan
+	if err := db.Group("recipe_id").Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	totals := make(map[int]int64, len(rows))
+	for _, row := range rows {
+		totals[row.RecipeID] = row.Total
+	}
+
+	return totals, nil
 }
 
 func (repo *repository) favoritedRecipeIDs(ctx context.Context, userID uuid.UUID, recipes []Recipe) (map[int]bool, error) {

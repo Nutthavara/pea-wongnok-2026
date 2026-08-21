@@ -38,6 +38,7 @@ type Recipe struct {
 	CreatorID     uuid.UUID
 	Creator       user.User `gorm:"foreignKey:CreatorID;references:ID"`
 	IsFavorite    bool      `gorm:"-"`
+	RatingTotal   int64     `gorm:"-"`
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 	DeletedAt     gorm.DeletedAt

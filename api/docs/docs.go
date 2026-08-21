@@ -961,6 +961,17 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_recipe.RatingResponse": {
+            "type": "object",
+            "properties": {
+                "average": {
+                    "type": "number"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
         "internal_recipe.RecipeIngredientRequest": {
             "type": "object",
             "required": [
@@ -1024,6 +1035,9 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "rating": {
+                    "$ref": "#/definitions/internal_recipe.RatingResponse"
                 },
                 "updatedAt": {
                     "type": "string"

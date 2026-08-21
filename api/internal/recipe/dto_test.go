@@ -5,7 +5,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"wongnok/internal/convutil"
+	"wongnok/internal/user"
+
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -152,6 +156,39 @@ func TestGetRecipesQueryBindsTriStateFavoriteFilter(t *testing.T) {
 				require.NotNil(t, query.Favorite)
 				assert.Equal(t, *expected, *query.Favorite)
 			}
+		})
+	}
+}
+
+func TestNewRecipeResponseMapsRatingAverageAndTotal(t *testing.T) {
+	testCases := map[string]struct {
+		averageRating float64
+		ratingTotal   int64
+		expected      RatingResponse
+	}{
+		"no ratings yet": {
+			averageRating: 0,
+			ratingTotal:   0,
+			expected:      RatingResponse{Average: 0, Total: 0},
+		},
+		"rounds average to 1 decimal place": {
+			averageRating: 4.8666666,
+			ratingTotal:   3,
+			expected:      RatingResponse{Average: 4.9, Total: 3},
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			recipe := Recipe{
+				Creator:       user.User{ID: uuid.New(), Name: convutil.ToPointer("Somchai")},
+				AverageRating: tc.averageRating,
+				RatingTotal:   tc.ratingTotal,
+			}
+
+			response := NewRecipeResponse(recipe)
+
+			assert.Equal(t, tc.expected, response.Rating)
 		})
 	}
 }
