@@ -71,6 +71,54 @@ func (repo *repository) Create(ctx context.Context, recipe Recipe) (*Recipe, err
 	return &recipe, nil
 }
 
+func (repo *repository) Replace(ctx context.Context, recipe Recipe) (*Recipe, error) {
+	if err := repo.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&Recipe{}).Where("id = ?", recipe.ID).Updates(map[string]any{
+			"name":          recipe.Name,
+			"description":   recipe.Description,
+			"image_url":     recipe.ImageURL,
+			"difficulty_id": recipe.DifficultyID,
+			"duration_id":   recipe.DurationID,
+		}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Where("recipe_id = ?", recipe.ID).Delete(&RecipeIngredient{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("recipe_id = ?", recipe.ID).Delete(&RecipeInstruction{}).Error; err != nil {
+			return err
+		}
+
+		for index := range recipe.Ingredients {
+			recipe.Ingredients[index].ID = 0
+			recipe.Ingredients[index].RecipeID = recipe.ID
+		}
+		if len(recipe.Ingredients) > 0 {
+			if err := tx.Omit(clause.Associations).Create(&recipe.Ingredients).Error; err != nil {
+				return err
+			}
+		}
+
+		for index := range recipe.Instructions {
+			recipe.Instructions[index].ID = 0
+			recipe.Instructions[index].RecipeID = recipe.ID
+		}
+		if len(recipe.Instructions) > 0 {
+			if err := tx.Omit(clause.Associations).Create(&recipe.Instructions).Error; err != nil {
+				return err
+			}
+		}
+
+		return nil
+
+	}); err != nil {
+		return nil, fmt.Errorf("replace recipe %d: %w", recipe.ID, err)
+	}
+
+	return repo.FindByID(ctx, recipe.ID)
+}
+
 func (repo *repository) FindByID(ctx context.Context, id int) (*Recipe, error) {
 	var recipe Recipe
 

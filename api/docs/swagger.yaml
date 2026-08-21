@@ -147,6 +147,34 @@ definitions:
       updatedAt:
         type: string
     type: object
+  internal_recipe.ReplaceRecipeRequest:
+    properties:
+      description:
+        type: string
+      difficultyId:
+        type: string
+      durationId:
+        type: string
+      imageUrl:
+        type: string
+      ingredients:
+        items:
+          $ref: '#/definitions/internal_recipe.RecipeIngredientRequest'
+        type: array
+      instructions:
+        items:
+          $ref: '#/definitions/internal_recipe.RecipeInstructionRequest'
+        type: array
+      name:
+        type: string
+    required:
+    - description
+    - difficultyId
+    - durationId
+    - ingredients
+    - instructions
+    - name
+    type: object
   internal_user.UserResponse:
     properties:
       email:
@@ -411,6 +439,54 @@ paths:
       security:
       - BearerAuth: []
       summary: เรียกดูสูตรอาหารแบบรายรายการ
+      tags:
+      - recipes
+    put:
+      consumes:
+      - application/json
+      description: แทนที่ข้อมูลสูตรอาหารทั้งหมดด้วยข้อมูลที่ระบุ โดยผู้สร้างสูตรเท่านั้นที่แก้ไขได้
+      parameters:
+      - description: Recipe ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Recipe data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_recipe.ReplaceRecipeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_recipe.RecipeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/wongnok_internal_httputil.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/wongnok_internal_httputil.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/wongnok_internal_httputil.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/wongnok_internal_httputil.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/wongnok_internal_httputil.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: แก้ไขสูตรอาหารทั้งหมด
       tags:
       - recipes
   /users/{id}:

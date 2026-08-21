@@ -133,6 +133,7 @@ func run() error {
 	recipeGroup.POST("", recipeHandler.Create)
 	recipeGroup.GET("", recipeHandler.GetRecipes)
 	recipeGroup.GET("/:id", recipeHandler.GetRecipe)
+	recipeGroup.PUT("/:id", recipeHandler.Replace)
 
 	// Register swagger
 	router.GET("swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

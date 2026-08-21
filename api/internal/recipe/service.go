@@ -13,6 +13,7 @@ type Repository interface {
 	List(ctx context.Context, query GetRecipesQuery) ([]Recipe, int64, error)
 	DifficultyExists(ctx context.Context, id string) (bool, error)
 	FindByID(ctx context.Context, id int) (*Recipe, error)
+	Replace(ctx context.Context, recipe Recipe) (*Recipe, error)
 }
 
 type service struct {
@@ -73,4 +74,34 @@ func (svc *service) Get(ctx context.Context, id int) (*Recipe, error) {
 	}
 
 	return recipe, nil
+}
+
+func (svc *service) Replace(ctx context.Context, id int, userID uuid.UUID, recipe Recipe) (*Recipe, error) {
+	existing, err := svc.repository.FindByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("replace recipe: %w", err)
+	}
+
+	if existing.CreatorID != userID {
+		return nil, ErrForbidden
+	}
+
+	refActive, err := svc.repository.HasActiveReferences(ctx, recipe.DifficultyID, recipe.DurationID)
+	if err != nil {
+		return nil, fmt.Errorf("replace recipe: %w", err)
+	}
+
+	if !refActive {
+		return nil, ErrReferenceDataUnavailable
+	}
+
+	recipe.ID = id
+	recipe.CreatorID = existing.CreatorID
+
+	replaced, err := svc.repository.Replace(ctx, recipe)
+	if err != nil {
+		return nil, fmt.Errorf("replace recipe: %w", err)
+	}
+
+	return replaced, nil
 }

@@ -124,6 +124,72 @@ func TestRepositoryCreateRollsBackWhenChildInsertFails(t *testing.T) {
 	assert.Zero(t, count)
 }
 
+func TestRepositoryReplace(t *testing.T) {
+	db := newIntegrationDB(t)
+	repo := NewRepository(db)
+	creatorID := createCreator(t, db)
+
+	created, err := repo.Create(context.Background(), Recipe{
+		Name:         "Tom yum soup",
+		Description:  "A bright, spicy Thai soup.",
+		DifficultyID: "medium",
+		DurationID:   "30m",
+		CreatorID:    creatorID,
+		Ingredients:  []RecipeIngredient{{Description: "2 cups stock"}},
+		Instructions: []RecipeInstruction{{Description: "Bring the stock to a simmer."}},
+	})
+	require.NoError(t, err)
+	newImageURL := "https://images.example.com/tom-yum-2.jpg"
+
+	replaced, err := repo.Replace(context.Background(), Recipe{
+		ID:           created.ID,
+		Name:         "Tom yum soup, revisited",
+		Description:  "An even brighter, spicier Thai soup.",
+		ImageURL:     &newImageURL,
+		DifficultyID: "hard",
+		DurationID:   "60m",
+		Ingredients:  []RecipeIngredient{{Description: "3 cups stock"}, {Description: "Lemongrass"}},
+		Instructions: []RecipeInstruction{{Description: "Simmer harder."}},
+	})
+
+	require.NoError(t, err)
+	require.NotNil(t, replaced)
+	assert.Equal(t, created.ID, replaced.ID)
+	assert.Equal(t, "Tom yum soup, revisited", replaced.Name)
+	assert.Equal(t, "An even brighter, spicier Thai soup.", replaced.Description)
+	require.NotNil(t, replaced.ImageURL)
+	assert.Equal(t, newImageURL, *replaced.ImageURL)
+	assert.Equal(t, "hard", replaced.DifficultyID)
+	assert.Equal(t, "60m", replaced.DurationID)
+	assert.Equal(t, creatorID, replaced.CreatorID)
+	require.Len(t, replaced.Ingredients, 2)
+	require.Len(t, replaced.Instructions, 1)
+	for _, ingredient := range replaced.Ingredients {
+		assert.Positive(t, ingredient.ID)
+		assert.NotContains(t, []int{created.Ingredients[0].ID}, ingredient.ID)
+	}
+
+	var ingredientCount int64
+	require.NoError(t, db.Model(&RecipeIngredient{}).Where("id = ?", created.Ingredients[0].ID).Count(&ingredientCount).Error)
+	assert.Zero(t, ingredientCount)
+}
+
+func TestRepositoryReplaceReturnsRecipeNotFoundWhenMissing(t *testing.T) {
+	db := newIntegrationDB(t)
+	repo := NewRepository(db)
+
+	replaced, err := repo.Replace(context.Background(), Recipe{
+		ID:           404,
+		Name:         "Ghost",
+		Description:  "Does not exist.",
+		DifficultyID: "easy",
+		DurationID:   "10m",
+	})
+
+	assert.Nil(t, replaced)
+	assert.ErrorIs(t, err, ErrRecipeNotFound)
+}
+
 func TestRepositoryFindByID(t *testing.T) {
 	db := newIntegrationDB(t)
 	repo := NewRepository(db)

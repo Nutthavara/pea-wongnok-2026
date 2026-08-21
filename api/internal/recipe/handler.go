@@ -16,6 +16,7 @@ type Service interface {
 	Create(ctx context.Context, creatorID uuid.UUID, recipe Recipe) (*Recipe, error)
 	List(ctx context.Context, query GetRecipesQuery) ([]Recipe, int64, error)
 	Get(ctx context.Context, id int) (*Recipe, error)
+	Replace(ctx context.Context, id int, userID uuid.UUID, recipe Recipe) (*Recipe, error)
 }
 
 type handler struct {
@@ -136,6 +137,61 @@ func (hdr *handler) GetRecipe(ctx *gin.Context) {
 		switch {
 		case errors.Is(err, ErrRecipeNotFound):
 			ctx.AbortWithStatusJSON(http.StatusNotFound, httputil.ErrorResponse{Message: "recipe not found"})
+
+		default:
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, httputil.ErrorResponse{Message: "internal server error"})
+
+		}
+		return
+	}
+
+	ctx.JSON(http.StatusOK, NewRecipeResponse(*recipe))
+}
+
+// Replace godoc
+//
+//	@Summary		แก้ไขสูตรอาหารทั้งหมด
+//	@Description	แทนที่ข้อมูลสูตรอาหารทั้งหมดด้วยข้อมูลที่ระบุ โดยผู้สร้างสูตรเท่านั้นที่แก้ไขได้
+//	@Tags			recipes
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			id		path		int						true	"Recipe ID"
+//	@Param			request	body		ReplaceRecipeRequest	true	"Recipe data"
+//	@Success		200		{object}	RecipeResponse
+//	@Failure		400		{object}	httputil.ErrorResponse
+//	@Failure		401		{object}	httputil.ErrorResponse
+//	@Failure		403		{object}	httputil.ErrorResponse
+//	@Failure		404		{object}	httputil.ErrorResponse
+//	@Failure		500		{object}	httputil.ErrorResponse
+//	@Router			/recipes/{id} [put]
+func (hdr *handler) Replace(ctx *gin.Context) {
+	userID, ok := reqctx.UserID(ctx.Request.Context())
+	if !ok {
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, httputil.ErrorResponse{Message: "unauthorized"})
+		return
+	}
+
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, httputil.ErrorResponse{Message: "invalid request"})
+		return
+	}
+
+	var req ReplaceRecipeRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, httputil.ErrorResponse{Message: "invalid request"})
+		return
+	}
+
+	recipe, err := hdr.service.Replace(ctx.Request.Context(), id, userID, req.ToRecipe())
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrRecipeNotFound), errors.Is(err, ErrReferenceDataUnavailable):
+			ctx.AbortWithStatusJSON(http.StatusNotFound, httputil.ErrorResponse{Message: "recipe not found"})
+
+		case errors.Is(err, ErrForbidden):
+			ctx.AbortWithStatusJSON(http.StatusForbidden, httputil.ErrorResponse{Message: "forbidden"})
 
 		default:
 			ctx.AbortWithStatusJSON(http.StatusInternalServerError, httputil.ErrorResponse{Message: "internal server error"})

@@ -254,6 +254,86 @@ func (_c *MockService_List_Call) RunAndReturn(run func(ctx context.Context, quer
 	return _c
 }
 
+// Replace provides a mock function for the type MockService
+func (_mock *MockService) Replace(ctx context.Context, id int, userID uuid.UUID, recipe Recipe) (*Recipe, error) {
+	ret := _mock.Called(ctx, id, userID, recipe)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Replace")
+	}
+
+	var r0 *Recipe
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int, uuid.UUID, Recipe) (*Recipe, error)); ok {
+		return returnFunc(ctx, id, userID, recipe)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int, uuid.UUID, Recipe) *Recipe); ok {
+		r0 = returnFunc(ctx, id, userID, recipe)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*Recipe)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int, uuid.UUID, Recipe) error); ok {
+		r1 = returnFunc(ctx, id, userID, recipe)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockService_Replace_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Replace'
+type MockService_Replace_Call struct {
+	*mock.Call
+}
+
+// Replace is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id int
+//   - userID uuid.UUID
+//   - recipe Recipe
+func (_e *MockService_Expecter) Replace(ctx any, id any, userID any, recipe any) *MockService_Replace_Call {
+	return &MockService_Replace_Call{Call: _e.mock.On("Replace", ctx, id, userID, recipe)}
+}
+
+func (_c *MockService_Replace_Call) Run(run func(ctx context.Context, id int, userID uuid.UUID, recipe Recipe)) *MockService_Replace_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int
+		if args[1] != nil {
+			arg1 = args[1].(int)
+		}
+		var arg2 uuid.UUID
+		if args[2] != nil {
+			arg2 = args[2].(uuid.UUID)
+		}
+		var arg3 Recipe
+		if args[3] != nil {
+			arg3 = args[3].(Recipe)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+		)
+	})
+	return _c
+}
+
+func (_c *MockService_Replace_Call) Return(recipe1 *Recipe, err error) *MockService_Replace_Call {
+	_c.Call.Return(recipe1, err)
+	return _c
+}
+
+func (_c *MockService_Replace_Call) RunAndReturn(run func(ctx context.Context, id int, userID uuid.UUID, recipe Recipe) (*Recipe, error)) *MockService_Replace_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewMockRepository creates a new instance of MockRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewMockRepository(t interface {
@@ -625,6 +705,74 @@ func (_c *MockRepository_List_Call) Return(recipes []Recipe, n int64, err error)
 }
 
 func (_c *MockRepository_List_Call) RunAndReturn(run func(ctx context.Context, query GetRecipesQuery) ([]Recipe, int64, error)) *MockRepository_List_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Replace provides a mock function for the type MockRepository
+func (_mock *MockRepository) Replace(ctx context.Context, recipe Recipe) (*Recipe, error) {
+	ret := _mock.Called(ctx, recipe)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Replace")
+	}
+
+	var r0 *Recipe
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, Recipe) (*Recipe, error)); ok {
+		return returnFunc(ctx, recipe)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, Recipe) *Recipe); ok {
+		r0 = returnFunc(ctx, recipe)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*Recipe)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, Recipe) error); ok {
+		r1 = returnFunc(ctx, recipe)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockRepository_Replace_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Replace'
+type MockRepository_Replace_Call struct {
+	*mock.Call
+}
+
+// Replace is a helper method to define mock.On call
+//   - ctx context.Context
+//   - recipe Recipe
+func (_e *MockRepository_Expecter) Replace(ctx any, recipe any) *MockRepository_Replace_Call {
+	return &MockRepository_Replace_Call{Call: _e.mock.On("Replace", ctx, recipe)}
+}
+
+func (_c *MockRepository_Replace_Call) Run(run func(ctx context.Context, recipe Recipe)) *MockRepository_Replace_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 Recipe
+		if args[1] != nil {
+			arg1 = args[1].(Recipe)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_Replace_Call) Return(recipe1 *Recipe, err error) *MockRepository_Replace_Call {
+	_c.Call.Return(recipe1, err)
+	return _c
+}
+
+func (_c *MockRepository_Replace_Call) RunAndReturn(run func(ctx context.Context, recipe Recipe) (*Recipe, error)) *MockRepository_Replace_Call {
 	_c.Call.Return(run)
 	return _c
 }
