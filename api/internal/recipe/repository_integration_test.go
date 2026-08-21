@@ -1,0 +1,193 @@
+package recipe
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/wait"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+)
+
+func TestRepositoryCreate(t *testing.T) {
+	db := newIntegrationDB(t)
+	repo := NewRepository(db)
+	creatorID := createCreator(t, db)
+	imageURL := "https://images.example.com/tom-yum.jpg"
+
+	created, err := repo.Create(context.Background(), Recipe{
+		Name:         "Tom yum soup",
+		Description:  "A bright, spicy Thai soup.",
+		ImageURL:     &imageURL,
+		DifficultyID: "medium",
+		DurationID:   "30m",
+		CreatorID:    creatorID,
+		Ingredients:  []RecipeIngredient{{Description: "2 cups stock"}, {Description: "Prawns"}},
+		Instructions: []RecipeInstruction{{Description: "Bring the stock to a simmer."}},
+	})
+
+	require.NoError(t, err)
+	require.NotNil(t, created)
+	assert.Positive(t, created.ID)
+	assert.Equal(t, imageURL, *created.ImageURL)
+	assert.Equal(t, 0.0, created.AverageRating)
+	assert.False(t, created.CreatedAt.IsZero())
+	assert.False(t, created.UpdatedAt.IsZero())
+	require.Len(t, created.Ingredients, 2)
+	require.Len(t, created.Instructions, 1)
+
+	for _, ingredient := range created.Ingredients {
+		assert.Positive(t, ingredient.ID)
+		assert.Equal(t, created.ID, ingredient.RecipeID)
+		assert.False(t, ingredient.CreatedAt.IsZero())
+	}
+	for _, instruction := range created.Instructions {
+		assert.Positive(t, instruction.ID)
+		assert.Equal(t, created.ID, instruction.RecipeID)
+		assert.False(t, instruction.CreatedAt.IsZero())
+	}
+
+	var persisted Recipe
+	require.NoError(t, db.
+		Preload("Creator").
+		Preload("Ingredients.Recipe").
+		Preload("Instructions.Recipe").
+		First(&persisted, created.ID).Error)
+	assert.Equal(t, creatorID, persisted.Creator.ID)
+	for _, ingredient := range persisted.Ingredients {
+		assert.Equal(t, persisted.ID, ingredient.Recipe.ID)
+	}
+	for _, instruction := range persisted.Instructions {
+		assert.Equal(t, persisted.ID, instruction.Recipe.ID)
+	}
+	persisted.Creator = created.Creator
+	for index := range persisted.Ingredients {
+		persisted.Ingredients[index].Recipe = created.Ingredients[index].Recipe
+	}
+	for index := range persisted.Instructions {
+		persisted.Instructions[index].Recipe = created.Instructions[index].Recipe
+	}
+	assert.Equal(t, *created, persisted)
+}
+
+func TestRepositoryCreateAllowsEmptyChildrenAndNilImageURL(t *testing.T) {
+	db := newIntegrationDB(t)
+	repo := NewRepository(db)
+	creatorID := createCreator(t, db)
+
+	created, err := repo.Create(context.Background(), Recipe{
+		Name:         "Plain rice",
+		Description:  "Steamed rice.",
+		DifficultyID: "easy",
+		DurationID:   "10m",
+		CreatorID:    creatorID,
+	})
+
+	require.NoError(t, err)
+	assert.Nil(t, created.ImageURL)
+	assert.Empty(t, created.Ingredients)
+	assert.Empty(t, created.Instructions)
+
+	var ingredientCount, instructionCount int64
+	require.NoError(t, db.Model(&RecipeIngredient{}).Where("recipe_id = ?", created.ID).Count(&ingredientCount).Error)
+	require.NoError(t, db.Model(&RecipeInstruction{}).Where("recipe_id = ?", created.ID).Count(&instructionCount).Error)
+	assert.Zero(t, ingredientCount)
+	assert.Zero(t, instructionCount)
+}
+
+func TestRepositoryCreateRollsBackWhenChildInsertFails(t *testing.T) {
+	db := newIntegrationDB(t)
+	repo := NewRepository(db)
+	creatorID := createCreator(t, db)
+	require.NoError(t, db.Exec("ALTER TABLE recipe_ingredients ADD CONSTRAINT recipe_ingredients_description_check CHECK (description <> 'invalid')").Error)
+
+	_, err := repo.Create(context.Background(), Recipe{
+		Name:         "Will fail",
+		Description:  "This must not persist.",
+		DifficultyID: "easy",
+		DurationID:   "10m",
+		CreatorID:    creatorID,
+		Ingredients:  []RecipeIngredient{{Description: "invalid"}},
+	})
+
+	require.Error(t, err)
+	var count int64
+	require.NoError(t, db.Model(&Recipe{}).Where("name = ?", "Will fail").Count(&count).Error)
+	assert.Zero(t, count)
+}
+
+func newIntegrationDB(t *testing.T) *gorm.DB {
+	t.Helper()
+	ctx := context.Background()
+	migrationPath := writeMigrationScript(t)
+	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image:        "postgres:16-alpine",
+			ExposedPorts: []string{"5432/tcp"},
+			Env: map[string]string{
+				"POSTGRES_DB":       "wongnok_test",
+				"POSTGRES_USER":     "postgres",
+				"POSTGRES_PASSWORD": "postgres",
+			},
+			Files: []testcontainers.ContainerFile{{
+				HostFilePath:      migrationPath,
+				ContainerFilePath: "/docker-entrypoint-initdb.d/001_migrations.sql",
+				FileMode:          0o644,
+			}},
+			WaitingFor: wait.ForListeningPort("5432/tcp"),
+		},
+		Started: true,
+	})
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, container.Terminate(ctx)) })
+
+	host, err := container.Host(ctx)
+	require.NoError(t, err)
+	port, err := container.MappedPort(ctx, "5432/tcp")
+	require.NoError(t, err)
+	dsn := fmt.Sprintf("host=%s port=%s user=postgres password=postgres dbname=wongnok_test sslmode=disable", host, port.Port())
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	require.NoError(t, err)
+
+	return db
+}
+
+func writeMigrationScript(t *testing.T) string {
+	t.Helper()
+	paths, err := filepath.Glob(filepath.Join("..", "..", "migrations", "*.sql"))
+	require.NoError(t, err)
+	require.NotEmpty(t, paths)
+
+	var statements []string
+	for _, path := range paths {
+		contents, err := os.ReadFile(path)
+		require.NoError(t, err)
+		up, _, _ := strings.Cut(string(contents), "-- +goose Down")
+		up = strings.TrimPrefix(up, "-- +goose Up")
+		statements = append(statements, strings.TrimSpace(up))
+	}
+
+	scriptPath := filepath.Join(t.TempDir(), "migrations.sql")
+	require.NoError(t, os.WriteFile(scriptPath, []byte(strings.Join(statements, "\n\n")), 0o600))
+	return scriptPath
+}
+
+func createCreator(t *testing.T, db *gorm.DB) uuid.UUID {
+	t.Helper()
+	creatorID := uuid.New()
+	require.NoError(t, db.Exec(
+		"INSERT INTO users (id, email, uid) VALUES (?, ?, ?)",
+		creatorID,
+		fmt.Sprintf("%s@example.com", creatorID),
+		fmt.Sprintf("uid-%s", creatorID),
+	).Error)
+	return creatorID
+}
