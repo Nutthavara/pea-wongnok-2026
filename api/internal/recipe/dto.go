@@ -95,6 +95,7 @@ type GetRecipesQuery struct {
 	Pagination
 	Name       string        `form:"name"`
 	Difficulty string        `form:"difficulty"`
+	Favorite   bool          `form:"favorite"`
 	Sort       SortDirection `form:"sort" binding:"omitempty,oneof=ASC DESC"`
 }
 
@@ -138,6 +139,7 @@ type RecipeResponse struct {
 	Ingredients  []IngredientResponse  `json:"ingredients"`
 	Instructions []InstructionResponse `json:"instructions"`
 	Creator      CreatorResponse       `json:"creator"`
+	IsFavorite   bool                  `json:"isFavorite"`
 	CreatedAt    time.Time             `json:"createdAt"`
 	UpdatedAt    time.Time             `json:"updatedAt"`
 }
@@ -178,8 +180,9 @@ func NewRecipeResponse(recipe Recipe) RecipeResponse {
 			ID:   recipe.Creator.ID.String(),
 			Name: *recipe.Creator.Name,
 		},
-		CreatedAt: recipe.CreatedAt,
-		UpdatedAt: recipe.UpdatedAt,
+		IsFavorite: recipe.IsFavorite,
+		CreatedAt:  recipe.CreatedAt,
+		UpdatedAt:  recipe.UpdatedAt,
 	}
 }
 

@@ -190,7 +190,7 @@ func (repo *repository) DifficultyExists(ctx context.Context, id string) (bool, 
 	return count > 0, nil
 }
 
-func (repo *repository) List(ctx context.Context, query GetRecipesQuery) ([]Recipe, int64, error) {
+func (repo *repository) List(ctx context.Context, userID uuid.UUID, query GetRecipesQuery) ([]Recipe, int64, error) {
 	db := repo.db.WithContext(ctx).Model(&Recipe{})
 
 	if query.Name != "" {
@@ -198,6 +198,9 @@ func (repo *repository) List(ctx context.Context, query GetRecipesQuery) ([]Reci
 	}
 	if query.Difficulty != "" {
 		db = db.Where("difficulty_id = ?", query.Difficulty)
+	}
+	if query.Favorite {
+		db = db.Where("id IN (?)", repo.db.Model(&UserFavorite{}).Select("recipe_id").Where("user_id = ?", userID))
 	}
 
 	var total int64
@@ -225,5 +228,49 @@ func (repo *repository) List(ctx context.Context, query GetRecipesQuery) ([]Reci
 		return nil, 0, fmt.Errorf("list recipes: %w", err)
 	}
 
+	favorited, err := repo.favoritedRecipeIDs(ctx, userID, recipes)
+	if err != nil {
+		return nil, 0, fmt.Errorf("list recipes: %w", err)
+	}
+	for index := range recipes {
+		recipes[index].IsFavorite = favorited[recipes[index].ID]
+	}
+
 	return recipes, total, nil
+}
+
+func (repo *repository) favoritedRecipeIDs(ctx context.Context, userID uuid.UUID, recipes []Recipe) (map[int]bool, error) {
+	if len(recipes) == 0 {
+		return map[int]bool{}, nil
+	}
+
+	ids := make([]int, len(recipes))
+	for index, recipe := range recipes {
+		ids[index] = recipe.ID
+	}
+
+	var favoritedIDs []int
+	if err := repo.db.WithContext(ctx).Model(&UserFavorite{}).Where(
+		"user_id = ? AND recipe_id IN ?", userID, ids,
+	).Pluck("recipe_id", &favoritedIDs).Error; err != nil {
+		return nil, err
+	}
+
+	favorited := make(map[int]bool, len(favoritedIDs))
+	for _, id := range favoritedIDs {
+		favorited[id] = true
+	}
+
+	return favorited, nil
+}
+
+func (repo *repository) IsFavorite(ctx context.Context, userID uuid.UUID, recipeID int) (bool, error) {
+	var count int64
+	if err := repo.db.WithContext(ctx).Model(&UserFavorite{}).
+		Where("user_id = ? AND recipe_id = ?", userID, recipeID).
+		Count(&count).Error; err != nil {
+		return false, fmt.Errorf("check favorite recipe %d: %w", recipeID, err)
+	}
+
+	return count > 0, nil
 }

@@ -239,8 +239,8 @@ func (_c *MockService_Favorite_Call) RunAndReturn(run func(ctx context.Context, 
 }
 
 // Get provides a mock function for the type MockService
-func (_mock *MockService) Get(ctx context.Context, id int) (*Recipe, error) {
-	ret := _mock.Called(ctx, id)
+func (_mock *MockService) Get(ctx context.Context, id int, userID uuid.UUID) (*Recipe, error) {
+	ret := _mock.Called(ctx, id, userID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Get")
@@ -248,18 +248,18 @@ func (_mock *MockService) Get(ctx context.Context, id int) (*Recipe, error) {
 
 	var r0 *Recipe
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int) (*Recipe, error)); ok {
-		return returnFunc(ctx, id)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int, uuid.UUID) (*Recipe, error)); ok {
+		return returnFunc(ctx, id, userID)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int) *Recipe); ok {
-		r0 = returnFunc(ctx, id)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int, uuid.UUID) *Recipe); ok {
+		r0 = returnFunc(ctx, id, userID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*Recipe)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, int) error); ok {
-		r1 = returnFunc(ctx, id)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, id, userID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -274,11 +274,12 @@ type MockService_Get_Call struct {
 // Get is a helper method to define mock.On call
 //   - ctx context.Context
 //   - id int
-func (_e *MockService_Expecter) Get(ctx any, id any) *MockService_Get_Call {
-	return &MockService_Get_Call{Call: _e.mock.On("Get", ctx, id)}
+//   - userID uuid.UUID
+func (_e *MockService_Expecter) Get(ctx any, id any, userID any) *MockService_Get_Call {
+	return &MockService_Get_Call{Call: _e.mock.On("Get", ctx, id, userID)}
 }
 
-func (_c *MockService_Get_Call) Run(run func(ctx context.Context, id int)) *MockService_Get_Call {
+func (_c *MockService_Get_Call) Run(run func(ctx context.Context, id int, userID uuid.UUID)) *MockService_Get_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -288,9 +289,14 @@ func (_c *MockService_Get_Call) Run(run func(ctx context.Context, id int)) *Mock
 		if args[1] != nil {
 			arg1 = args[1].(int)
 		}
+		var arg2 uuid.UUID
+		if args[2] != nil {
+			arg2 = args[2].(uuid.UUID)
+		}
 		run(
 			arg0,
 			arg1,
+			arg2,
 		)
 	})
 	return _c
@@ -301,14 +307,14 @@ func (_c *MockService_Get_Call) Return(recipe *Recipe, err error) *MockService_G
 	return _c
 }
 
-func (_c *MockService_Get_Call) RunAndReturn(run func(ctx context.Context, id int) (*Recipe, error)) *MockService_Get_Call {
+func (_c *MockService_Get_Call) RunAndReturn(run func(ctx context.Context, id int, userID uuid.UUID) (*Recipe, error)) *MockService_Get_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // List provides a mock function for the type MockService
-func (_mock *MockService) List(ctx context.Context, query GetRecipesQuery) ([]Recipe, int64, error) {
-	ret := _mock.Called(ctx, query)
+func (_mock *MockService) List(ctx context.Context, userID uuid.UUID, query GetRecipesQuery) ([]Recipe, int64, error) {
+	ret := _mock.Called(ctx, userID, query)
 
 	if len(ret) == 0 {
 		panic("no return value specified for List")
@@ -317,23 +323,23 @@ func (_mock *MockService) List(ctx context.Context, query GetRecipesQuery) ([]Re
 	var r0 []Recipe
 	var r1 int64
 	var r2 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, GetRecipesQuery) ([]Recipe, int64, error)); ok {
-		return returnFunc(ctx, query)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, GetRecipesQuery) ([]Recipe, int64, error)); ok {
+		return returnFunc(ctx, userID, query)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, GetRecipesQuery) []Recipe); ok {
-		r0 = returnFunc(ctx, query)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, GetRecipesQuery) []Recipe); ok {
+		r0 = returnFunc(ctx, userID, query)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]Recipe)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, GetRecipesQuery) int64); ok {
-		r1 = returnFunc(ctx, query)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, GetRecipesQuery) int64); ok {
+		r1 = returnFunc(ctx, userID, query)
 	} else {
 		r1 = ret.Get(1).(int64)
 	}
-	if returnFunc, ok := ret.Get(2).(func(context.Context, GetRecipesQuery) error); ok {
-		r2 = returnFunc(ctx, query)
+	if returnFunc, ok := ret.Get(2).(func(context.Context, uuid.UUID, GetRecipesQuery) error); ok {
+		r2 = returnFunc(ctx, userID, query)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -347,24 +353,30 @@ type MockService_List_Call struct {
 
 // List is a helper method to define mock.On call
 //   - ctx context.Context
+//   - userID uuid.UUID
 //   - query GetRecipesQuery
-func (_e *MockService_Expecter) List(ctx any, query any) *MockService_List_Call {
-	return &MockService_List_Call{Call: _e.mock.On("List", ctx, query)}
+func (_e *MockService_Expecter) List(ctx any, userID any, query any) *MockService_List_Call {
+	return &MockService_List_Call{Call: _e.mock.On("List", ctx, userID, query)}
 }
 
-func (_c *MockService_List_Call) Run(run func(ctx context.Context, query GetRecipesQuery)) *MockService_List_Call {
+func (_c *MockService_List_Call) Run(run func(ctx context.Context, userID uuid.UUID, query GetRecipesQuery)) *MockService_List_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 GetRecipesQuery
+		var arg1 uuid.UUID
 		if args[1] != nil {
-			arg1 = args[1].(GetRecipesQuery)
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 GetRecipesQuery
+		if args[2] != nil {
+			arg2 = args[2].(GetRecipesQuery)
 		}
 		run(
 			arg0,
 			arg1,
+			arg2,
 		)
 	})
 	return _c
@@ -375,7 +387,7 @@ func (_c *MockService_List_Call) Return(recipes []Recipe, n int64, err error) *M
 	return _c
 }
 
-func (_c *MockService_List_Call) RunAndReturn(run func(ctx context.Context, query GetRecipesQuery) ([]Recipe, int64, error)) *MockService_List_Call {
+func (_c *MockService_List_Call) RunAndReturn(run func(ctx context.Context, userID uuid.UUID, query GetRecipesQuery) ([]Recipe, int64, error)) *MockService_List_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -944,9 +956,81 @@ func (_c *MockRepository_HasActiveReferences_Call) RunAndReturn(run func(ctx con
 	return _c
 }
 
+// IsFavorite provides a mock function for the type MockRepository
+func (_mock *MockRepository) IsFavorite(ctx context.Context, userID uuid.UUID, recipeID int) (bool, error) {
+	ret := _mock.Called(ctx, userID, recipeID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for IsFavorite")
+	}
+
+	var r0 bool
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int) (bool, error)); ok {
+		return returnFunc(ctx, userID, recipeID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int) bool); ok {
+		r0 = returnFunc(ctx, userID, recipeID)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, int) error); ok {
+		r1 = returnFunc(ctx, userID, recipeID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockRepository_IsFavorite_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsFavorite'
+type MockRepository_IsFavorite_Call struct {
+	*mock.Call
+}
+
+// IsFavorite is a helper method to define mock.On call
+//   - ctx context.Context
+//   - userID uuid.UUID
+//   - recipeID int
+func (_e *MockRepository_Expecter) IsFavorite(ctx any, userID any, recipeID any) *MockRepository_IsFavorite_Call {
+	return &MockRepository_IsFavorite_Call{Call: _e.mock.On("IsFavorite", ctx, userID, recipeID)}
+}
+
+func (_c *MockRepository_IsFavorite_Call) Run(run func(ctx context.Context, userID uuid.UUID, recipeID int)) *MockRepository_IsFavorite_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 int
+		if args[2] != nil {
+			arg2 = args[2].(int)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_IsFavorite_Call) Return(b bool, err error) *MockRepository_IsFavorite_Call {
+	_c.Call.Return(b, err)
+	return _c
+}
+
+func (_c *MockRepository_IsFavorite_Call) RunAndReturn(run func(ctx context.Context, userID uuid.UUID, recipeID int) (bool, error)) *MockRepository_IsFavorite_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // List provides a mock function for the type MockRepository
-func (_mock *MockRepository) List(ctx context.Context, query GetRecipesQuery) ([]Recipe, int64, error) {
-	ret := _mock.Called(ctx, query)
+func (_mock *MockRepository) List(ctx context.Context, userID uuid.UUID, query GetRecipesQuery) ([]Recipe, int64, error) {
+	ret := _mock.Called(ctx, userID, query)
 
 	if len(ret) == 0 {
 		panic("no return value specified for List")
@@ -955,23 +1039,23 @@ func (_mock *MockRepository) List(ctx context.Context, query GetRecipesQuery) ([
 	var r0 []Recipe
 	var r1 int64
 	var r2 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, GetRecipesQuery) ([]Recipe, int64, error)); ok {
-		return returnFunc(ctx, query)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, GetRecipesQuery) ([]Recipe, int64, error)); ok {
+		return returnFunc(ctx, userID, query)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, GetRecipesQuery) []Recipe); ok {
-		r0 = returnFunc(ctx, query)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, GetRecipesQuery) []Recipe); ok {
+		r0 = returnFunc(ctx, userID, query)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]Recipe)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, GetRecipesQuery) int64); ok {
-		r1 = returnFunc(ctx, query)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, GetRecipesQuery) int64); ok {
+		r1 = returnFunc(ctx, userID, query)
 	} else {
 		r1 = ret.Get(1).(int64)
 	}
-	if returnFunc, ok := ret.Get(2).(func(context.Context, GetRecipesQuery) error); ok {
-		r2 = returnFunc(ctx, query)
+	if returnFunc, ok := ret.Get(2).(func(context.Context, uuid.UUID, GetRecipesQuery) error); ok {
+		r2 = returnFunc(ctx, userID, query)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -985,24 +1069,30 @@ type MockRepository_List_Call struct {
 
 // List is a helper method to define mock.On call
 //   - ctx context.Context
+//   - userID uuid.UUID
 //   - query GetRecipesQuery
-func (_e *MockRepository_Expecter) List(ctx any, query any) *MockRepository_List_Call {
-	return &MockRepository_List_Call{Call: _e.mock.On("List", ctx, query)}
+func (_e *MockRepository_Expecter) List(ctx any, userID any, query any) *MockRepository_List_Call {
+	return &MockRepository_List_Call{Call: _e.mock.On("List", ctx, userID, query)}
 }
 
-func (_c *MockRepository_List_Call) Run(run func(ctx context.Context, query GetRecipesQuery)) *MockRepository_List_Call {
+func (_c *MockRepository_List_Call) Run(run func(ctx context.Context, userID uuid.UUID, query GetRecipesQuery)) *MockRepository_List_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 GetRecipesQuery
+		var arg1 uuid.UUID
 		if args[1] != nil {
-			arg1 = args[1].(GetRecipesQuery)
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 GetRecipesQuery
+		if args[2] != nil {
+			arg2 = args[2].(GetRecipesQuery)
 		}
 		run(
 			arg0,
 			arg1,
+			arg2,
 		)
 	})
 	return _c
@@ -1013,7 +1103,7 @@ func (_c *MockRepository_List_Call) Return(recipes []Recipe, n int64, err error)
 	return _c
 }
 
-func (_c *MockRepository_List_Call) RunAndReturn(run func(ctx context.Context, query GetRecipesQuery) ([]Recipe, int64, error)) *MockRepository_List_Call {
+func (_c *MockRepository_List_Call) RunAndReturn(run func(ctx context.Context, userID uuid.UUID, query GetRecipesQuery) ([]Recipe, int64, error)) *MockRepository_List_Call {
 	_c.Call.Return(run)
 	return _c
 }

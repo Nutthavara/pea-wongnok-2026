@@ -37,6 +37,7 @@ type Recipe struct {
 	AverageRating float64
 	CreatorID     uuid.UUID
 	Creator       user.User `gorm:"foreignKey:CreatorID;references:ID"`
+	IsFavorite    bool      `gorm:"-"`
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 	DeletedAt     gorm.DeletedAt

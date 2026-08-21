@@ -234,6 +234,106 @@ func TestRepositoryFindByID(t *testing.T) {
 	})
 }
 
+func TestRepositoryIsFavorite(t *testing.T) {
+	db := newIntegrationDB(t)
+	repo := NewRepository(db)
+	userID := createCreator(t, db)
+	creatorID := createCreator(t, db)
+
+	created, err := repo.Create(context.Background(), Recipe{
+		Name:         "Tom yum soup",
+		Description:  "A bright, spicy Thai soup.",
+		DifficultyID: "medium",
+		DurationID:   "30m",
+		CreatorID:    creatorID,
+	})
+	require.NoError(t, err)
+
+	t.Run("not favorited", func(t *testing.T) {
+		isFavorite, err := repo.IsFavorite(context.Background(), userID, created.ID)
+
+		require.NoError(t, err)
+		assert.False(t, isFavorite)
+	})
+
+	t.Run("favorited", func(t *testing.T) {
+		require.NoError(t, repo.Favorite(context.Background(), userID, created.ID))
+
+		isFavorite, err := repo.IsFavorite(context.Background(), userID, created.ID)
+
+		require.NoError(t, err)
+		assert.True(t, isFavorite)
+	})
+}
+
+func TestRepositoryList(t *testing.T) {
+	db := newIntegrationDB(t)
+	repo := NewRepository(db)
+	userID := createCreator(t, db)
+	creatorID := createCreator(t, db)
+
+	favorited, err := repo.Create(context.Background(), Recipe{
+		Name:         "Tom yum soup",
+		Description:  "A bright, spicy Thai soup.",
+		DifficultyID: "medium",
+		DurationID:   "30m",
+		CreatorID:    creatorID,
+	})
+	require.NoError(t, err)
+
+	notFavorited, err := repo.Create(context.Background(), Recipe{
+		Name:         "Plain rice",
+		Description:  "Steamed rice.",
+		DifficultyID: "easy",
+		DurationID:   "10m",
+		CreatorID:    creatorID,
+	})
+	require.NoError(t, err)
+
+	require.NoError(t, repo.Favorite(context.Background(), userID, favorited.ID))
+
+	t.Run("marks isFavorite per recipe for the caller", func(t *testing.T) {
+		recipes, total, err := repo.List(context.Background(), userID, GetRecipesQuery{Pagination: Pagination{Page: 1, Limit: 100}})
+
+		require.NoError(t, err)
+		assert.EqualValues(t, 2, total)
+		require.Len(t, recipes, 2)
+
+		isFavoriteByID := make(map[int]bool, len(recipes))
+		for _, recipe := range recipes {
+			isFavoriteByID[recipe.ID] = recipe.IsFavorite
+		}
+		assert.True(t, isFavoriteByID[favorited.ID])
+		assert.False(t, isFavoriteByID[notFavorited.ID])
+	})
+
+	t.Run("favorite filter returns only the caller's favorited recipes", func(t *testing.T) {
+		recipes, total, err := repo.List(context.Background(), userID, GetRecipesQuery{
+			Pagination: Pagination{Page: 1, Limit: 100},
+			Favorite:   true,
+		})
+
+		require.NoError(t, err)
+		assert.EqualValues(t, 1, total)
+		require.Len(t, recipes, 1)
+		assert.Equal(t, favorited.ID, recipes[0].ID)
+		assert.True(t, recipes[0].IsFavorite)
+	})
+
+	t.Run("favorite filter is scoped to the requesting user", func(t *testing.T) {
+		otherUserID := createCreator(t, db)
+
+		recipes, total, err := repo.List(context.Background(), otherUserID, GetRecipesQuery{
+			Pagination: Pagination{Page: 1, Limit: 100},
+			Favorite:   true,
+		})
+
+		require.NoError(t, err)
+		assert.Zero(t, total)
+		assert.Empty(t, recipes)
+	})
+}
+
 func TestRepositoryDelete(t *testing.T) {
 	db := newIntegrationDB(t)
 	repo := NewRepository(db)

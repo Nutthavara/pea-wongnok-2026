@@ -10,9 +10,10 @@ import (
 type Repository interface {
 	HasActiveReferences(ctx context.Context, difficultyID, durationID string) (bool, error)
 	Create(ctx context.Context, recipe Recipe) (*Recipe, error)
-	List(ctx context.Context, query GetRecipesQuery) ([]Recipe, int64, error)
+	List(ctx context.Context, userID uuid.UUID, query GetRecipesQuery) ([]Recipe, int64, error)
 	DifficultyExists(ctx context.Context, id string) (bool, error)
 	FindByID(ctx context.Context, id int) (*Recipe, error)
+	IsFavorite(ctx context.Context, userID uuid.UUID, recipeID int) (bool, error)
 	Replace(ctx context.Context, recipe Recipe) (*Recipe, error)
 	Delete(ctx context.Context, id int) error
 	Favorite(ctx context.Context, userID uuid.UUID, recipeID int) error
@@ -44,7 +45,7 @@ func (svc *service) Create(ctx context.Context, creatorID uuid.UUID, recipe Reci
 	return svc.repository.Create(ctx, recipe)
 }
 
-func (svc *service) List(ctx context.Context, query GetRecipesQuery) ([]Recipe, int64, error) {
+func (svc *service) List(ctx context.Context, userID uuid.UUID, query GetRecipesQuery) ([]Recipe, int64, error) {
 	// Inject default parameter if blank
 	query.Ensure()
 
@@ -61,7 +62,7 @@ func (svc *service) List(ctx context.Context, query GetRecipesQuery) ([]Recipe, 
 		}
 	}
 
-	recipes, total, err := svc.repository.List(ctx, query)
+	recipes, total, err := svc.repository.List(ctx, userID, query)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list recipes: %w", err)
 	}
@@ -69,12 +70,18 @@ func (svc *service) List(ctx context.Context, query GetRecipesQuery) ([]Recipe, 
 	return recipes, total, nil
 }
 
-func (svc *service) Get(ctx context.Context, id int) (*Recipe, error) {
+func (svc *service) Get(ctx context.Context, id int, userID uuid.UUID) (*Recipe, error) {
 	recipe, err := svc.repository.FindByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("get recipe: %w", err)
 
 	}
+
+	isFavorite, err := svc.repository.IsFavorite(ctx, userID, id)
+	if err != nil {
+		return nil, fmt.Errorf("get recipe: %w", err)
+	}
+	recipe.IsFavorite = isFavorite
 
 	return recipe, nil
 }

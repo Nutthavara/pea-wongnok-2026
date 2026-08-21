@@ -209,6 +209,12 @@ const docTemplate = `{
                         "in": "query"
                     },
                     {
+                        "type": "boolean",
+                        "description": "กรองเฉพาะสูตรอาหารที่ผู้ใช้ปัจจุบันถูกใจไว้",
+                        "name": "favorite",
+                        "in": "query"
+                    },
+                    {
                         "enum": [
                             "ASC",
                             "DESC"
@@ -941,6 +947,9 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/internal_recipe.InstructionResponse"
                     }
+                },
+                "isFavorite": {
+                    "type": "boolean"
                 },
                 "name": {
                     "type": "string"

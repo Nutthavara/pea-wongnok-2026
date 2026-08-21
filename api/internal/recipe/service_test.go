@@ -55,25 +55,91 @@ func TestServiceCreateReturnsReferenceValidationFailure(t *testing.T) {
 	assert.ErrorIs(t, err, expected)
 }
 
-func TestServiceGetReturnsRecipeFromRepository(t *testing.T) {
+func TestServiceGetReturnsRecipeWithFavoriteStatus(t *testing.T) {
 	repo := NewMockRepository(t)
-	expected := &Recipe{ID: 42, Name: "Tom yum soup"}
-	repo.EXPECT().FindByID(mock.Anything, 42).Return(expected, nil)
+	userID := uuid.New()
+	found := &Recipe{ID: 42, Name: "Tom yum soup"}
+	repo.EXPECT().FindByID(mock.Anything, 42).Return(found, nil)
+	repo.EXPECT().IsFavorite(mock.Anything, userID, 42).Return(true, nil)
 
-	result, err := NewService(repo).Get(context.Background(), 42)
+	result, err := NewService(repo).Get(context.Background(), 42, userID)
 
 	assert.NoError(t, err)
-	assert.Equal(t, expected, result)
+	assert.Equal(t, &Recipe{ID: 42, Name: "Tom yum soup", IsFavorite: true}, result)
 }
 
 func TestServiceGetPropagatesRecipeNotFound(t *testing.T) {
 	repo := NewMockRepository(t)
 	repo.EXPECT().FindByID(mock.Anything, 42).Return(nil, ErrRecipeNotFound)
 
-	result, err := NewService(repo).Get(context.Background(), 42)
+	result, err := NewService(repo).Get(context.Background(), 42, uuid.New())
 
 	assert.Nil(t, result)
 	assert.ErrorIs(t, err, ErrRecipeNotFound)
+}
+
+func TestServiceGetPropagatesFavoriteLookupFailure(t *testing.T) {
+	repo := NewMockRepository(t)
+	userID := uuid.New()
+	repo.EXPECT().FindByID(mock.Anything, 42).Return(&Recipe{ID: 42}, nil)
+	expected := errors.New("database unavailable")
+	repo.EXPECT().IsFavorite(mock.Anything, userID, 42).Return(false, expected)
+
+	result, err := NewService(repo).Get(context.Background(), 42, userID)
+
+	assert.Nil(t, result)
+	assert.ErrorIs(t, err, expected)
+}
+
+func TestServiceListReturnsRecipesFromRepositoryWithDefaults(t *testing.T) {
+	repo := NewMockRepository(t)
+	userID := uuid.New()
+	expected := []Recipe{{ID: 42, Name: "Tom yum soup"}}
+	repo.EXPECT().List(mock.Anything, userID, GetRecipesQuery{
+		Pagination: Pagination{Page: 1, Limit: 12},
+		Sort:       DescendingSortDirection,
+	}).Return(expected, int64(1), nil)
+
+	result, total, err := NewService(repo).List(context.Background(), userID, GetRecipesQuery{})
+
+	assert.NoError(t, err)
+	assert.Equal(t, expected, result)
+	assert.EqualValues(t, 1, total)
+}
+
+func TestServiceListPassesFavoriteFilterThrough(t *testing.T) {
+	repo := NewMockRepository(t)
+	userID := uuid.New()
+	repo.EXPECT().List(mock.Anything, userID, mock.MatchedBy(func(query GetRecipesQuery) bool {
+		return query.Favorite
+	})).Return(nil, int64(0), nil)
+
+	_, _, err := NewService(repo).List(context.Background(), userID, GetRecipesQuery{Favorite: true})
+
+	assert.NoError(t, err)
+}
+
+func TestServiceListRejectsUnknownDifficultyWithoutQueryingRepository(t *testing.T) {
+	repo := NewMockRepository(t)
+	repo.EXPECT().DifficultyExists(mock.Anything, "missing").Return(false, nil)
+
+	result, total, err := NewService(repo).List(context.Background(), uuid.New(), GetRecipesQuery{Difficulty: "missing"})
+
+	assert.Nil(t, result)
+	assert.Zero(t, total)
+	assert.ErrorIs(t, err, ErrInvalidReferenceData)
+}
+
+func TestServiceListPropagatesRepositoryFailure(t *testing.T) {
+	repo := NewMockRepository(t)
+	expected := errors.New("database unavailable")
+	repo.EXPECT().List(mock.Anything, mock.Anything, mock.Anything).Return(nil, int64(0), expected)
+
+	result, total, err := NewService(repo).List(context.Background(), uuid.New(), GetRecipesQuery{})
+
+	assert.Nil(t, result)
+	assert.Zero(t, total)
+	assert.ErrorIs(t, err, expected)
 }
 
 func TestServiceReplaceUpdatesRecipeOwnedByCaller(t *testing.T) {

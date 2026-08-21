@@ -142,6 +142,8 @@ definitions:
         items:
           $ref: '#/definitions/internal_recipe.InstructionResponse'
         type: array
+      isFavorite:
+        type: boolean
       name:
         type: string
       updatedAt:
@@ -335,6 +337,10 @@ paths:
         in: query
         name: difficulty
         type: string
+      - description: กรองเฉพาะสูตรอาหารที่ผู้ใช้ปัจจุบันถูกใจไว้
+        in: query
+        name: favorite
+        type: boolean
       - default: DESC
         description: เรียงลำดับตามเวลาที่สร้าง
         enum:

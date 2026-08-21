@@ -14,8 +14,8 @@ import (
 
 type Service interface {
 	Create(ctx context.Context, creatorID uuid.UUID, recipe Recipe) (*Recipe, error)
-	List(ctx context.Context, query GetRecipesQuery) ([]Recipe, int64, error)
-	Get(ctx context.Context, id int) (*Recipe, error)
+	List(ctx context.Context, userID uuid.UUID, query GetRecipesQuery) ([]Recipe, int64, error)
+	Get(ctx context.Context, id int, userID uuid.UUID) (*Recipe, error)
 	Replace(ctx context.Context, id int, userID uuid.UUID, recipe Recipe) (*Recipe, error)
 	Delete(ctx context.Context, id int, userID uuid.UUID) error
 	Favorite(ctx context.Context, id int, userID uuid.UUID) error
@@ -82,6 +82,7 @@ func (hdr *handler) Create(ctx *gin.Context) {
 //	@Security		BearerAuth
 //	@Param			name		query		string	false	"ชื่อของสูตรอาหาร"
 //	@Param			difficulty	query		string	false	"Id ของความยากในการทำ"
+//	@Param			favorite	query		bool	false	"กรองเฉพาะสูตรอาหารที่ผู้ใช้ปัจจุบันถูกใจไว้"
 //	@Param			sort		query		string	false	"เรียงลำดับตามเวลาที่สร้าง"	Enums(ASC, DESC)	default(DESC)
 //	@Param			page		query		int		false	"หน้าที่ต้องการแสดง"		minimum(1)			default(1)
 //	@Param			limit		query		int		false	"จำนวนรายการต่อหน้า"		minimum(1)			maximum(100)	default(12)
@@ -92,13 +93,19 @@ func (hdr *handler) Create(ctx *gin.Context) {
 //	@Failure		500			{object}	httputil.ErrorResponse
 //	@Router			/recipes [get]
 func (hdr *handler) GetRecipes(ctx *gin.Context) {
+	userID, ok := reqctx.UserID(ctx.Request.Context())
+	if !ok {
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, httputil.ErrorResponse{Message: "unauthorized"})
+		return
+	}
+
 	var query GetRecipesQuery
 	if err := ctx.ShouldBindQuery(&query); err != nil {
 		ctx.JSON(http.StatusBadRequest, httputil.ErrorResponse{Message: err.Error()})
 		return
 	}
 
-	recipes, total, err := hdr.service.List(ctx.Request.Context(), query)
+	recipes, total, err := hdr.service.List(ctx.Request.Context(), userID, query)
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrInvalidReferenceData):
@@ -129,13 +136,19 @@ func (hdr *handler) GetRecipes(ctx *gin.Context) {
 //	@Failure		500	{object}	httputil.ErrorResponse
 //	@Router			/recipes/{id} [get]
 func (hdr *handler) GetRecipe(ctx *gin.Context) {
+	userID, ok := reqctx.UserID(ctx.Request.Context())
+	if !ok {
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, httputil.ErrorResponse{Message: "unauthorized"})
+		return
+	}
+
 	id, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, httputil.ErrorResponse{Message: "invalid request"})
 		return
 	}
 
-	recipe, err := hdr.service.Get(ctx.Request.Context(), id)
+	recipe, err := hdr.service.Get(ctx.Request.Context(), id, userID)
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrRecipeNotFound):
