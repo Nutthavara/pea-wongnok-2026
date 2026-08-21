@@ -15,3 +15,10 @@ type KeycloakClaims struct {
 	Name              string `json:"name"`
 	PreferredUsername string `json:"preferred_username"`
 }
+
+type keycloakTokenResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	TokenType    string `json:"token_type"`
+	ExpiresIn    int    `json:"expires_in"`
+}

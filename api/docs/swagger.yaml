@@ -27,6 +27,14 @@ definitions:
     required:
     - refreshToken
     type: object
+  internal_auth.RefreshTokenRequest:
+    properties:
+      refreshToken:
+        example: eyJhbGci...
+        type: string
+    required:
+    - refreshToken
+    type: object
   internal_recipe.CreateRecipeRequest:
     properties:
       description:
@@ -341,6 +349,36 @@ paths:
       security:
       - BearerAuth: []
       summary: ออกจากระบบ
+      tags:
+      - auth
+  /auth/refresh-token:
+    post:
+      consumes:
+      - application/json
+      description: แลก refresh token เดิมเป็น credential ชุดใหม่จาก Keycloak
+      parameters:
+      - description: refresh token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_auth.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_auth.Credential'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/wongnok_internal_httputil.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/wongnok_internal_httputil.ErrorResponse'
+      summary: ขอ access token ใหม่ด้วย refresh token
       tags:
       - auth
   /recipes:

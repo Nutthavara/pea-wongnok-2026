@@ -7,3 +7,7 @@ type ExchangeRequest struct {
 type LogoutRequest struct {
 	RefreshToken string `json:"refreshToken" binding:"required" example:"eyJhbGci..."`
 }
+
+type RefreshTokenRequest struct {
+	RefreshToken string `json:"refreshToken" binding:"required" example:"eyJhbGci..."`
+}

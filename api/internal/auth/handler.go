@@ -14,6 +14,7 @@ type Service interface {
 	HandleCallback(ctx context.Context, code, state string) (string, error)
 	ExchangeTicket(ctx context.Context, ticket string) (Credential, error)
 	Logout(ctx context.Context, refreshToken string) error
+	RefreshToken(ctx context.Context, refreshToken string) (Credential, error)
 }
 
 type handler struct {
@@ -135,4 +136,36 @@ func (hdr *handler) Logout(ctx *gin.Context) {
 	}
 
 	ctx.Status(http.StatusNoContent)
+}
+
+// RefreshToken godoc
+//
+//	@Summary		ขอ access token ใหม่ด้วย refresh token
+//	@Description	แลก refresh token เดิมเป็น credential ชุดใหม่จาก Keycloak
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		RefreshTokenRequest	true	"refresh token"
+//	@Success		200		{object}	Credential
+//	@Failure		400		{object}	httputil.ErrorResponse
+//	@Failure		401		{object}	httputil.ErrorResponse
+//	@Router			/auth/refresh-token [post]
+func (hdr *handler) RefreshToken(ctx *gin.Context) {
+	var req RefreshTokenRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, httputil.ErrorResponse{Message: err.Error()})
+		return
+	}
+
+	credential, err := hdr.service.RefreshToken(ctx.Request.Context(), req.RefreshToken)
+	if err != nil {
+		if errors.Is(err, ErrInvalidRefreshToken) {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, httputil.ErrorResponse{Message: "invalid or expired refresh token"})
+			return
+		}
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, httputil.ErrorResponse{Message: "cannot refresh token"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, credential)
 }

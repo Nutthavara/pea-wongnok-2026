@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -147,6 +148,45 @@ func (svc *service) Logout(ctx context.Context, refreshToken string) error {
 	}
 
 	return nil
+}
+
+func (svc *service) RefreshToken(ctx context.Context, refreshToken string) (Credential, error) {
+	tokenURL := fmt.Sprintf("%s/protocol/openid-connect/token", svc.keycloak.RealmURL())
+
+	form := url.Values{
+		"grant_type":    {"refresh_token"},
+		"client_id":     {svc.keycloak.ClientID},
+		"client_secret": {svc.keycloak.ClientSecret},
+		"refresh_token": {refreshToken},
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, tokenURL, strings.NewReader(form.Encode()))
+	if err != nil {
+		return Credential{}, fmt.Errorf("build refresh token request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := svc.http.Do(req)
+	if err != nil {
+		return Credential{}, fmt.Errorf("call keycloak token endpoint: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return Credential{}, ErrInvalidRefreshToken
+	}
+
+	var tokenResp keycloakTokenResponse
+	if err := json.NewDecoder(resp.Body).Decode(&tokenResp); err != nil {
+		return Credential{}, fmt.Errorf("decode token response: %w", err)
+	}
+
+	return Credential{
+		AccessToken:  tokenResp.AccessToken,
+		RefreshToken: tokenResp.RefreshToken,
+		BearerType:   tokenResp.TokenType,
+		ExpiresAt:    time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second),
+	}, nil
 }
 
 // Private

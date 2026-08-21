@@ -121,6 +121,7 @@ func run() error {
 	authGroup.GET("/callback", authHandler.Callback)
 	authGroup.POST("/exchange", authHandler.Exchange)
 	authGroup.POST("/logout", authHandler.Logout)
+	authGroup.POST("/refresh-token", authHandler.RefreshToken)
 
 	// User resource
 	userGroup := v1.Group("/users")

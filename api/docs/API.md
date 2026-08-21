@@ -1,6 +1,6 @@
 # Recipe API contract
 
-This hand-authored contract covers recipe endpoints (fully implemented) and reference-data endpoints (contract only — not yet implemented, see [Reference data](#reference-data)). Generated Swagger files intentionally describe only implemented routes.
+This hand-authored contract covers recipe, user, and auth endpoints (all fully implemented) plus reference-data endpoints (contract only — not yet implemented, see [Reference data](#reference-data)). Generated Swagger files intentionally describe only implemented routes.
 
 ## Conventions
 
@@ -71,7 +71,7 @@ User:
 }
 ```
 
-`id`, `name`, and `email` are sourced from Keycloak and are read-only through this API. `imageUrl` and `bio` are `null` when absent.
+`name` and `email` are sourced from Keycloak (refreshed on every login from the ID token's claims) and are read-only through this API. `id` is an internally generated UUID, not the Keycloak subject — the Keycloak subject (`sub`) is stored server-side as a separate, unexposed field used only to look up the local user record. `imageUrl` and `bio` are `null` when absent.
 
 ## Reference data
 
@@ -266,3 +266,95 @@ Send `imageUrl` and `bio`; both are optional and either may be `null` or omitted
 | 401    | Error body             |
 | 404    | `{id}` is not `me`     |
 | 500    | Error body             |
+
+## Auth
+
+`/auth/*` routes are exempt from the `Authorization: Bearer <access-token>` requirement in [Conventions](#conventions) — none of them sit behind the JWT middleware, including `POST /auth/logout` despite its generated Swagger doc carrying a `BearerAuth` security annotation (a doc artifact, not an enforced check). These routes drive the Keycloak login handshake and token lifecycle; `GET /auth/login` and `GET /auth/callback` are browser redirects, not JSON endpoints.
+
+State and tickets are single-use values stored in Redis (`oauth_state:<value>` key prefix) and atomically consumed with `GETDEL` — a second use of the same state or ticket always misses and fails with the "invalid or expired" case below, indistinguishable from actual expiry.
+
+Credential:
+
+```json
+{
+  "accessToken": "eyJhbGci...",
+  "refreshToken": "eyJhbGci...",
+  "bearerType": "Bearer",
+  "expiresAt": "2026-08-22T11:00:00Z"
+}
+```
+
+### `GET /auth/login`
+
+Generates a random state token, saves it to Redis with a 5-minute TTL, and redirects the browser to Keycloak's authorization endpoint with that state. Not called via `fetch`/`axios` — the frontend navigates the browser here directly.
+
+| Status | Meaning                                       |
+| ------ | ---------------------------------------------- |
+| 302    | Redirect to Keycloak's login page              |
+| 500    | Error body (failed to generate/save state)     |
+
+### `GET /auth/callback`
+
+Keycloak redirects here itself after the user authenticates — this is not an endpoint the frontend calls directly. Requires `code` and `state` query parameters.
+
+| Parameter | Type   | Meaning                                    |
+| --------- | ------ | ------------------------------------------- |
+| `code`    | string | Authorization code issued by Keycloak       |
+| `state`   | string | Must match the state saved by `/auth/login` |
+
+On success: consumes (`GETDEL`) the saved state, exchanges `code` for tokens with Keycloak, verifies the returned `id_token`, and upserts a local `user` row keyed by the Keycloak subject (`sub`) — creating it on first login or refreshing `email`/`name`/`preferredUsername`/`lastSignedInAt` on subsequent ones. It then mints a one-time ticket, stores the resulting `Credential` in Redis under that ticket for 30 seconds, and redirects to `{FRONTEND_URL}/auth/callback?ticket=<ticket>`.
+
+| Status | Meaning                                                              |
+| ------ | ---------------------------------------------------------------------- |
+| 302    | Redirect to `{FRONTEND_URL}/auth/callback?ticket=<ticket>`             |
+| 400    | Missing `code` or `state` query parameter                              |
+| 401    | `state` not found/expired/already consumed                             |
+| 502    | Any other failure — code exchange, `id_token` verify, user upsert, etc. |
+
+### `POST /auth/exchange`
+
+Frontend calls this via axios immediately after being redirected back with `?ticket=...`, trading the short-lived ticket for the real `Credential`.
+
+```json
+{ "ticket": "pQx7...base64url..." }
+```
+
+Consumes (`GETDEL`) the ticket saved by `/auth/callback`; since that ticket has a 30-second TTL and is single-use, a delayed or repeated call fails with 401.
+
+| Status | Meaning                                    |
+| ------ | -------------------------------------------- |
+| 200    | `Credential` JSON                             |
+| 400    | Missing `ticket` in body                      |
+| 401    | Ticket not found/expired/already consumed     |
+| 500    | Error body                                    |
+
+### `POST /auth/logout`
+
+Revokes the given refresh token directly against Keycloak (`POST {realm}/protocol/openid-connect/logout`, form-encoded, with `client_id`/`client_secret`/`refresh_token`). No `Authorization` header is read or required — only the refresh token in the body identifies the session.
+
+```json
+{ "refreshToken": "eyJhbGci..." }
+```
+
+| Status | Meaning                                                                |
+| ------ | ------------------------------------------------------------------------ |
+| 204    | Logged out; no response body                                             |
+| 400    | Missing `refreshToken` in body                                           |
+| 502    | Keycloak did not return `204` (invalid token, unreachable, etc.)         |
+
+### `POST /auth/refresh-token`
+
+Exchanges a still-valid Keycloak refresh token for a new credential pair (`grant_type=refresh_token` against `POST {realm}/protocol/openid-connect/token`, form-encoded). No `Authorization` header is sent or required — refreshing happens precisely when the caller's access token is gone or expired.
+
+```json
+{ "refreshToken": "eyJhbGci..." }
+```
+
+Success response is the `Credential` representation above, with `expiresAt` computed as `now + expires_in` from Keycloak's token response.
+
+| Status | Meaning                                                                                    |
+| ------ | --------------------------------------------------------------------------------------------- |
+| 200    | New `Credential` JSON                                                                          |
+| 400    | Missing `refreshToken` in body                                                                 |
+| 401    | Keycloak's token endpoint returned any non-`200` status (invalid/expired/revoked token, or a Keycloak-side failure) — the two cases are not distinguished |
+| 500    | Error body (request build/transport failure, or malformed response body from Keycloak)         |
