@@ -175,13 +175,28 @@ definitions:
     - instructions
     - name
     type: object
+  internal_user.UpdateUserRequest:
+    properties:
+      bio:
+        example: Home cook who loves spicy food.
+        type: string
+      imageUrl:
+        example: https://images.example.com/avatar.jpg
+        type: string
+    type: object
   internal_user.UserResponse:
     properties:
+      bio:
+        example: Home cook who loves spicy food.
+        type: string
       email:
         example: somchai@pea.co.th
         type: string
       id:
         example: 3f0c1a7e-2b19-4c5e-9f3a
+        type: string
+      imageUrl:
+        example: https://images.example.com/avatar.jpg
         type: string
       name:
         example: สมชาย ใจดี
@@ -529,8 +544,7 @@ paths:
     get:
       description: ค้นหาข้อมูล User จาก UUID แล้วคืนข้อมูล User ที่เจอกลับมา
       parameters:
-      - description: User ID (UUID)
-        format: uuid
+      - description: User ID
         in: path
         name: id
         required: true
@@ -557,6 +571,51 @@ paths:
       security:
       - BearerAuth: []
       summary: ดึงข้อมูลจาก user แบบรายคน
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: แก้ไข imageUrl และ bio ของผู้ใช้ที่กำลังเข้าสู่ระบบ (name และ email
+        มาจาก Keycloak แก้ไขผ่าน API นี้ไม่ได้)
+      parameters:
+      - description: User ID (UUID); only \
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated profile
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_user.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_user.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/wongnok_internal_httputil.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/wongnok_internal_httputil.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/wongnok_internal_httputil.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/wongnok_internal_httputil.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: แก้ไขข้อมูลโปรไฟล์ผู้ใช้
       tags:
       - users
 securityDefinitions:

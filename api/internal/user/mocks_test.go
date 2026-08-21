@@ -106,6 +106,80 @@ func (_c *MockService_FindByID_Call) RunAndReturn(run func(ctx context.Context, 
 	return _c
 }
 
+// Update provides a mock function for the type MockService
+func (_mock *MockService) Update(ctx context.Context, uid uuid.UUID, user User) (*User, error) {
+	ret := _mock.Called(ctx, uid, user)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Update")
+	}
+
+	var r0 *User
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, User) (*User, error)); ok {
+		return returnFunc(ctx, uid, user)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, User) *User); ok {
+		r0 = returnFunc(ctx, uid, user)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*User)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, User) error); ok {
+		r1 = returnFunc(ctx, uid, user)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockService_Update_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Update'
+type MockService_Update_Call struct {
+	*mock.Call
+}
+
+// Update is a helper method to define mock.On call
+//   - ctx context.Context
+//   - uid uuid.UUID
+//   - user User
+func (_e *MockService_Expecter) Update(ctx any, uid any, user any) *MockService_Update_Call {
+	return &MockService_Update_Call{Call: _e.mock.On("Update", ctx, uid, user)}
+}
+
+func (_c *MockService_Update_Call) Run(run func(ctx context.Context, uid uuid.UUID, user User)) *MockService_Update_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 User
+		if args[2] != nil {
+			arg2 = args[2].(User)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockService_Update_Call) Return(user1 *User, err error) *MockService_Update_Call {
+	_c.Call.Return(user1, err)
+	return _c
+}
+
+func (_c *MockService_Update_Call) RunAndReturn(run func(ctx context.Context, uid uuid.UUID, user User) (*User, error)) *MockService_Update_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewMockRepository creates a new instance of MockRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewMockRepository(t interface {

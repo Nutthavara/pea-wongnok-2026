@@ -32,6 +32,22 @@ func (svc *service) FindByID(ctx context.Context, uid uuid.UUID) (*User, error) 
 	return svc.repository.FindByID(ctx, uid)
 }
 
+func (svc *service) Update(ctx context.Context, uid uuid.UUID, user User) (*User, error) {
+	existing, err := svc.repository.FindByID(ctx, uid)
+	if err != nil {
+		return nil, fmt.Errorf("update user: %w", err)
+	}
+
+	existing.ImageURL = user.ImageURL
+	existing.Bio = user.Bio
+
+	if err := svc.repository.Update(ctx, *existing); err != nil {
+		return nil, fmt.Errorf("update user: %w", err)
+	}
+
+	return existing, nil
+}
+
 func (svc *service) UpsertFromKeycloak(ctx context.Context, kuser KeycloakUser) error {
 	existing, err := svc.repository.FindByUID(ctx, kuser.UID)
 	if err != nil && !errors.Is(err, ErrUserNotFound) {

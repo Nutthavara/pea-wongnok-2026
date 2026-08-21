@@ -126,6 +126,7 @@ func run() error {
 	userGroup := v1.Group("/users")
 	userGroup.Use(middleware.JWT(oidcVerifer, userService))
 	userGroup.GET("/:id", userHandler.GetUser)
+	userGroup.PUT("/:id", userHandler.UpdateUser)
 
 	// Recipe resource
 	recipeGroup := v1.Group("/recipes")

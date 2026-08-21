@@ -81,8 +81,8 @@ func (hdr *handler) Create(ctx *gin.Context) {
 //	@Param			name		query		string	false	"ชื่อของสูตรอาหาร"
 //	@Param			difficulty	query		string	false	"Id ของความยากในการทำ"
 //	@Param			sort		query		string	false	"เรียงลำดับตามเวลาที่สร้าง"	Enums(ASC, DESC)	default(DESC)
-//	@Param			page		query		int		false	"หน้าที่ต้องการแสดง"				minimum(1)			default(1)
-//	@Param			limit		query		int		false	"จำนวนรายการต่อหน้า"			minimum(1)			maximum(100)	default(12)
+//	@Param			page		query		int		false	"หน้าที่ต้องการแสดง"		minimum(1)			default(1)
+//	@Param			limit		query		int		false	"จำนวนรายการต่อหน้า"		minimum(1)			maximum(100)	default(12)
 //	@Success		200			{object}	ListRecipesResponse
 //	@Failure		400			{object}	httputil.ErrorResponse
 //	@Failure		401			{object}	httputil.ErrorResponse

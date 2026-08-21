@@ -57,6 +57,20 @@ Create and replace use a complete write body. `name`, `description`, `difficulty
 
 `difficultyId` and `durationId` must reference active master-data records; otherwise the response is `400 invalid_request` (not `404`, despite the name). The `ingredients`/`instructions` keys must be present in the body — an explicit `[]` is fine, but omitting the key or sending `null` fails validation. When present, `imageUrl` must be a valid URL.
 
+User:
+
+```json
+{
+  "id": "3f0c1a7e-2b19-4c5e-9f3a-000000000000",
+  "name": "Somchai",
+  "email": "somchai@example.com",
+  "imageUrl": "https://images.example.com/avatar.jpg",
+  "bio": "Home cook who loves spicy food."
+}
+```
+
+`id`, `name`, and `email` are sourced from Keycloak and are read-only through this API. `imageUrl` and `bio` are `null` when absent.
+
 ## Reference data
 
 **Not implemented yet.** No route, handler, service, or repository exists for `/difficulties` or `/durations` — calling them currently 404s at the router level (no matching route), not via the handler's own 404 logic. `difficulties` and `durations` tables exist (with the seed rows below) and are already read internally by the recipe package (`Repository.HasActiveReferences`, `Repository.DifficultyExists`) to validate `difficultyId`/`durationId` on recipe writes and the `difficulty` list filter — only the standalone list endpoints described below are missing. The contract below is the target shape for when they're built.
@@ -162,3 +176,35 @@ Known current limitation: `page` has no effect on the returned rows (a server-si
 | 500    | Error body                          |
 
 For update and delete, ownership is checked after locating an active recipe: another user's active recipe returns `403`; missing or soft-deleted recipes return `404`.
+
+## Users
+
+`{id}` only accepts the literal `me`; the handler substitutes the authenticated user's ID from the middleware-attached context. Any other value returns `404` — there is no lookup-by-arbitrary-ID capability.
+
+### `GET /users/{id}`
+
+| Status | Meaning                |
+| ------ | ---------------------- |
+| 200    | Complete user response |
+| 401    | Error body             |
+| 404    | `{id}` is not `me`     |
+| 500    | Error body             |
+
+### `PUT /users/{id}`
+
+Send `imageUrl` and `bio`; both are optional and either may be `null` or omitted to clear the field — the two are indistinguishable server-side, so omitting a key has the same effect as sending it as `null`. `name` and `email` are not accepted here — they are sourced from Keycloak and cannot be changed through this API. The response is the complete, updated user representation.
+
+```json
+{
+  "imageUrl": "https://images.example.com/avatar.jpg",
+  "bio": "Home cook who loves spicy food."
+}
+```
+
+| Status | Meaning                |
+| ------ | ---------------------- |
+| 200    | Complete user response |
+| 400    | Malformed body         |
+| 401    | Error body             |
+| 404    | `{id}` is not `me`     |
+| 500    | Error body             |

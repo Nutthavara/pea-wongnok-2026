@@ -526,8 +526,7 @@
                 "parameters": [
                     {
                         "type": "string",
-                        "format": "uuid",
-                        "description": "User ID (UUID)",
+                        "description": "User ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -542,6 +541,74 @@
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/wongnok_internal_httputil.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/wongnok_internal_httputil.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/wongnok_internal_httputil.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "แก้ไข imageUrl และ bio ของผู้ใช้ที่กำลังเข้าสู่ระบบ (name และ email มาจาก Keycloak แก้ไขผ่าน API นี้ไม่ได้)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "แก้ไขข้อมูลโปรไฟล์ผู้ใช้",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID (UUID); only \\",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated profile",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_user.UpdateUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/internal_user.UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/wongnok_internal_httputil.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/wongnok_internal_httputil.ErrorResponse"
                         }
@@ -827,9 +894,26 @@
                 }
             }
         },
+        "internal_user.UpdateUserRequest": {
+            "type": "object",
+            "properties": {
+                "bio": {
+                    "type": "string",
+                    "example": "Home cook who loves spicy food."
+                },
+                "imageUrl": {
+                    "type": "string",
+                    "example": "https://images.example.com/avatar.jpg"
+                }
+            }
+        },
         "internal_user.UserResponse": {
             "type": "object",
             "properties": {
+                "bio": {
+                    "type": "string",
+                    "example": "Home cook who loves spicy food."
+                },
                 "email": {
                     "type": "string",
                     "example": "somchai@pea.co.th"
@@ -837,6 +921,10 @@
                 "id": {
                     "type": "string",
                     "example": "3f0c1a7e-2b19-4c5e-9f3a"
+                },
+                "imageUrl": {
+                    "type": "string",
+                    "example": "https://images.example.com/avatar.jpg"
                 },
                 "name": {
                     "type": "string",
