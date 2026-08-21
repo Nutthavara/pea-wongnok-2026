@@ -35,12 +35,13 @@ Recipe:
   "instructions": [{ "id": 201, "description": "Bring the stock to a simmer." }],
   "creator": { "id": "3f0c1a7e-2b19-4c5e-9f3a-000000000000", "name": "Somchai" },
   "isFavorite": false,
+  "rating": { "average": 4.9, "total": 128 },
   "createdAt": "2026-08-20T10:00:00Z",
   "updatedAt": "2026-08-20T10:00:00Z"
 }
 ```
 
-`imageUrl` is `null` when absent. `creator.name` is a string. Only active ingredients and instructions are returned; no `deletedAt` field is exposed. `isFavorite` is `true` when the authenticated caller has favorited this recipe (a matching row exists in `user_favorites`), `false` otherwise — see [Favorites](#favorites).
+`imageUrl` is `null` when absent. `creator.name` is a string. Only active ingredients and instructions are returned; no `deletedAt` field is exposed. `isFavorite` is `true` when the authenticated caller has favorited this recipe (a matching row exists in `user_favorites`), `false` otherwise — see [Favorites](#favorites). `rating.average` is `recipes.average_rating` rounded to 1 decimal place; `rating.total` is the count of ratings for this recipe. Both are `0` when the recipe has no ratings yet — see [Ratings](#ratings).
 
 Create and replace use a complete write body. `name`, `description`, `difficultyId`, `durationId`, `ingredients`, and `instructions` are required; `imageUrl` is optional. Ingredient/instruction arrays may be empty, and each item has a required non-empty `description`.
 
@@ -140,7 +141,7 @@ Requires `Authorization: Bearer <access-token>` like all recipe routes — this 
 
 `favorite` is a tri-state filter on `user_favorites` for the authenticated caller: omitted applies no filter, `true` returns only recipes the caller favorited, `false` returns only recipes the caller has **not** favorited.
 
-The success body is `{ "total": 1, "results": [<complete-recipe>, ...] }`; `total` is the count after all filters. Each recipe in `results` includes `isFavorite` (see [Representations](#representations)); when `favorite=true` every returned recipe has `isFavorite: true`, and when `favorite=false` every returned recipe has `isFavorite: false`.
+The success body is `{ "total": 1, "results": [<complete-recipe>, ...] }`; `total` is the count after all filters. Each recipe in `results` includes `isFavorite` and `rating` (see [Representations](#representations)); when `favorite=true` every returned recipe has `isFavorite: true`, and when `favorite=false` every returned recipe has `isFavorite: false`.
 
 | Status | Meaning                                                                                        |
 | ------ | ---------------------------------------------------------------------------------------------- |
@@ -210,6 +211,29 @@ Calling this repeatedly for the same recipe is a no-op after the first call: if 
 | 500    | Error body                                               |
 
 If no matching `user_favorites` row exists, the response is still `204` — not `404` — and no row is deleted.
+
+## Ratings
+
+Rating is per-user: it records a `(user_id, recipe_id)` row in `recipe_ratings` for the authenticated caller. Duplicate prevention is an application-level check (not a database uniqueness constraint) — the service looks for an existing `recipe_ratings` row for that pair before inserting. See [`GET /recipes`](#get-recipes) and [Representations](#representations) for reading the aggregated rating (the `rating.average`/`rating.total` fields on each recipe).
+
+### `POST /recipes/{recipeId}/rating`
+
+`recipeId` is a required integer.
+
+```json
+{ "rating": 5 }
+```
+
+| Status | Meaning                    |
+| ------ | -------------------------- |
+| 204    | Rated; no response body    |
+| 400    | Invalid `recipeId` or body |
+| 401    | Error body                 |
+| 500    | Error body                 |
+
+Calling this repeatedly for the same recipe is a no-op after the first call: if a `recipe_ratings` row for this `(user_id, recipe_id)` pair already exists, the new rating is not recorded and the response is still `204` — a caller can only rate a given recipe once.
+
+On a successful (non-duplicate) rating, `recipes.average_rating` for that recipe is recomputed from all its `recipe_ratings` rows and persisted immediately, so the next read of that recipe reflects the new average.
 
 ## Users
 
