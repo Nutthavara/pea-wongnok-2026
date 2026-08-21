@@ -392,6 +392,75 @@ func (_c *MockService_List_Call) RunAndReturn(run func(ctx context.Context, user
 	return _c
 }
 
+// Rate provides a mock function for the type MockService
+func (_mock *MockService) Rate(ctx context.Context, id int, userID uuid.UUID, rating int) error {
+	ret := _mock.Called(ctx, id, userID, rating)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Rate")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int, uuid.UUID, int) error); ok {
+		r0 = returnFunc(ctx, id, userID, rating)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockService_Rate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Rate'
+type MockService_Rate_Call struct {
+	*mock.Call
+}
+
+// Rate is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id int
+//   - userID uuid.UUID
+//   - rating int
+func (_e *MockService_Expecter) Rate(ctx any, id any, userID any, rating any) *MockService_Rate_Call {
+	return &MockService_Rate_Call{Call: _e.mock.On("Rate", ctx, id, userID, rating)}
+}
+
+func (_c *MockService_Rate_Call) Run(run func(ctx context.Context, id int, userID uuid.UUID, rating int)) *MockService_Rate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int
+		if args[1] != nil {
+			arg1 = args[1].(int)
+		}
+		var arg2 uuid.UUID
+		if args[2] != nil {
+			arg2 = args[2].(uuid.UUID)
+		}
+		var arg3 int
+		if args[3] != nil {
+			arg3 = args[3].(int)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+		)
+	})
+	return _c
+}
+
+func (_c *MockService_Rate_Call) Return(err error) *MockService_Rate_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockService_Rate_Call) RunAndReturn(run func(ctx context.Context, id int, userID uuid.UUID, rating int) error) *MockService_Rate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Replace provides a mock function for the type MockService
 func (_mock *MockService) Replace(ctx context.Context, id int, userID uuid.UUID, recipe Recipe) (*Recipe, error) {
 	ret := _mock.Called(ctx, id, userID, recipe)
@@ -1104,6 +1173,75 @@ func (_c *MockRepository_List_Call) Return(recipes []Recipe, n int64, err error)
 }
 
 func (_c *MockRepository_List_Call) RunAndReturn(run func(ctx context.Context, userID uuid.UUID, query GetRecipesQuery) ([]Recipe, int64, error)) *MockRepository_List_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Rate provides a mock function for the type MockRepository
+func (_mock *MockRepository) Rate(ctx context.Context, userID uuid.UUID, recipeID int, score float64) error {
+	ret := _mock.Called(ctx, userID, recipeID, score)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Rate")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int, float64) error); ok {
+		r0 = returnFunc(ctx, userID, recipeID, score)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockRepository_Rate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Rate'
+type MockRepository_Rate_Call struct {
+	*mock.Call
+}
+
+// Rate is a helper method to define mock.On call
+//   - ctx context.Context
+//   - userID uuid.UUID
+//   - recipeID int
+//   - score float64
+func (_e *MockRepository_Expecter) Rate(ctx any, userID any, recipeID any, score any) *MockRepository_Rate_Call {
+	return &MockRepository_Rate_Call{Call: _e.mock.On("Rate", ctx, userID, recipeID, score)}
+}
+
+func (_c *MockRepository_Rate_Call) Run(run func(ctx context.Context, userID uuid.UUID, recipeID int, score float64)) *MockRepository_Rate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 int
+		if args[2] != nil {
+			arg2 = args[2].(int)
+		}
+		var arg3 float64
+		if args[3] != nil {
+			arg3 = args[3].(float64)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_Rate_Call) Return(err error) *MockRepository_Rate_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockRepository_Rate_Call) RunAndReturn(run func(ctx context.Context, userID uuid.UUID, recipeID int, score float64) error) *MockRepository_Rate_Call {
 	_c.Call.Return(run)
 	return _c
 }

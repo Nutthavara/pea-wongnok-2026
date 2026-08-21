@@ -20,6 +20,7 @@ type Service interface {
 	Delete(ctx context.Context, id int, userID uuid.UUID) error
 	Favorite(ctx context.Context, id int, userID uuid.UUID) error
 	Unfavorite(ctx context.Context, id int, userID uuid.UUID) error
+	Rate(ctx context.Context, id int, userID uuid.UUID, rating int) error
 }
 
 type handler struct {
@@ -278,6 +279,47 @@ func (hdr *handler) Unfavorite(ctx *gin.Context) {
 	}
 
 	if err := hdr.service.Unfavorite(ctx.Request.Context(), id, userID); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusInternalServerError, httputil.ErrorResponse{Message: "internal server error"})
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
+}
+
+// Rate godoc
+//
+//	@Summary		ให้คะแนนสูตรอาหาร
+//	@Description	ให้คะแนนสูตรอาหารที่ระบุ ผู้ใช้แต่ละคนให้คะแนนสูตรอาหารแต่ละสูตรได้เพียงครั้งเดียว คำขอซ้ำจะไม่มีผล และค่าเฉลี่ยของสูตรจะถูกคำนวณใหม่ทุกครั้งที่บันทึกคะแนน
+//	@Tags			recipes
+//	@Accept			json
+//	@Security		BearerAuth
+//	@Param			id		path	int					true	"Recipe ID"
+//	@Param			request	body	RateRecipeRequest	true	"Rating data"
+//	@Success		204
+//	@Failure		400	{object}	httputil.ErrorResponse
+//	@Failure		401	{object}	httputil.ErrorResponse
+//	@Failure		500	{object}	httputil.ErrorResponse
+//	@Router			/recipes/{id}/rating [post]
+func (hdr *handler) Rate(ctx *gin.Context) {
+	userID, ok := reqctx.UserID(ctx.Request.Context())
+	if !ok {
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, httputil.ErrorResponse{Message: "unauthorized"})
+		return
+	}
+
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, httputil.ErrorResponse{Message: "invalid request"})
+		return
+	}
+
+	var req RateRecipeRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, httputil.ErrorResponse{Message: "invalid request"})
+		return
+	}
+
+	if err := hdr.service.Rate(ctx.Request.Context(), id, userID, req.Rating); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusInternalServerError, httputil.ErrorResponse{Message: "internal server error"})
 		return
 	}

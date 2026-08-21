@@ -73,3 +73,13 @@ type UserFavorite struct {
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt
 }
+
+type RecipeRating struct {
+	UserID    uuid.UUID `gorm:"primaryKey"`
+	RecipeID  int       `gorm:"primaryKey"`
+	Recipe    Recipe    `gorm:"foreignKey:RecipeID;references:ID"`
+	Score     float64
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt
+}

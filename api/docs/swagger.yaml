@@ -104,6 +104,15 @@ definitions:
       total:
         type: integer
     type: object
+  internal_recipe.RateRecipeRequest:
+    properties:
+      rating:
+        maximum: 5
+        minimum: 1
+        type: integer
+    required:
+    - rating
+    type: object
   internal_recipe.RecipeIngredientRequest:
     properties:
       description:
@@ -604,6 +613,44 @@ paths:
       security:
       - BearerAuth: []
       summary: เพิ่มสูตรอาหารในรายการโปรด
+      tags:
+      - recipes
+  /recipes/{id}/rating:
+    post:
+      consumes:
+      - application/json
+      description: ให้คะแนนสูตรอาหารที่ระบุ ผู้ใช้แต่ละคนให้คะแนนสูตรอาหารแต่ละสูตรได้เพียงครั้งเดียว
+        คำขอซ้ำจะไม่มีผล และค่าเฉลี่ยของสูตรจะถูกคำนวณใหม่ทุกครั้งที่บันทึกคะแนน
+      parameters:
+      - description: Recipe ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Rating data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_recipe.RateRecipeRequest'
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/wongnok_internal_httputil.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/wongnok_internal_httputil.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/wongnok_internal_httputil.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: ให้คะแนนสูตรอาหาร
       tags:
       - recipes
   /users/{id}:

@@ -280,6 +280,27 @@ func TestServiceUnfavoritePropagatesRepositoryFailure(t *testing.T) {
 	assert.ErrorIs(t, err, expected)
 }
 
+func TestServiceRateRatesRecipeForCaller(t *testing.T) {
+	repo := NewMockRepository(t)
+	userID := uuid.New()
+	repo.EXPECT().Rate(mock.Anything, userID, 42, 5.0).Return(nil)
+
+	err := NewService(repo).Rate(context.Background(), 42, userID, 5)
+
+	assert.NoError(t, err)
+}
+
+func TestServiceRatePropagatesRepositoryFailure(t *testing.T) {
+	repo := NewMockRepository(t)
+	userID := uuid.New()
+	expected := errors.New("database unavailable")
+	repo.EXPECT().Rate(mock.Anything, userID, 42, 5.0).Return(expected)
+
+	err := NewService(repo).Rate(context.Background(), 42, userID, 5)
+
+	assert.ErrorIs(t, err, expected)
+}
+
 func TestServiceCreateAssignsCreatorBeforePersistence(t *testing.T) {
 	repo := NewMockRepository(t)
 	creatorID := uuid.New()

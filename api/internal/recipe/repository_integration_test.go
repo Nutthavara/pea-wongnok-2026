@@ -522,6 +522,71 @@ func TestRepositoryUnfavorite(t *testing.T) {
 	})
 }
 
+func TestRepositoryRate(t *testing.T) {
+	db := newIntegrationDB(t)
+	repo := NewRepository(db)
+	creatorID := createCreator(t, db)
+
+	created, err := repo.Create(context.Background(), Recipe{
+		Name:         "Tom yum soup",
+		Description:  "A bright, spicy Thai soup.",
+		DifficultyID: "medium",
+		DurationID:   "30m",
+		CreatorID:    creatorID,
+	})
+	require.NoError(t, err)
+
+	t.Run("new rating", func(t *testing.T) {
+		userID := createCreator(t, db)
+
+		require.NoError(t, repo.Rate(context.Background(), userID, created.ID, 4))
+
+		var count int64
+		require.NoError(t, db.Model(&RecipeRating{}).Where("user_id = ? AND recipe_id = ?", userID, created.ID).Count(&count).Error)
+		assert.EqualValues(t, 1, count)
+
+		var recipe Recipe
+		require.NoError(t, db.First(&recipe, created.ID).Error)
+		assert.Equal(t, 4.0, recipe.AverageRating)
+	})
+
+	t.Run("already rated recipe does not record a duplicate or change the score", func(t *testing.T) {
+		userID := createCreator(t, db)
+		require.NoError(t, repo.Rate(context.Background(), userID, created.ID, 2))
+
+		require.NoError(t, repo.Rate(context.Background(), userID, created.ID, 5))
+
+		var score float64
+		require.NoError(t, db.Model(&RecipeRating{}).Where("user_id = ? AND recipe_id = ?", userID, created.ID).
+			Select("score").Scan(&score).Error)
+		assert.Equal(t, 2.0, score)
+	})
+
+	t.Run("recomputes the recipe average across all raters", func(t *testing.T) {
+		recipe, err := repo.Create(context.Background(), Recipe{
+			Name:         "Green curry",
+			Description:  "A rich, coconutty curry.",
+			DifficultyID: "medium",
+			DurationID:   "30m",
+			CreatorID:    creatorID,
+		})
+		require.NoError(t, err)
+
+		require.NoError(t, repo.Rate(context.Background(), createCreator(t, db), recipe.ID, 3))
+		require.NoError(t, repo.Rate(context.Background(), createCreator(t, db), recipe.ID, 5))
+
+		var updated Recipe
+		require.NoError(t, db.First(&updated, recipe.ID).Error)
+		assert.Equal(t, 4.0, updated.AverageRating)
+	})
+
+	t.Run("missing recipe", func(t *testing.T) {
+		err := repo.Rate(context.Background(), createCreator(t, db), created.ID+1000, 5)
+
+		assert.Error(t, err)
+	})
+}
+
 func newIntegrationDB(t *testing.T) *gorm.DB {
 	t.Helper()
 	ctx := context.Background()

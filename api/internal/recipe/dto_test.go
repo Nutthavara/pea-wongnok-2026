@@ -98,6 +98,36 @@ func TestCreateRecipeRequestRejectsInvalidWriteBodies(t *testing.T) {
 	}
 }
 
+func TestRateRecipeRequestBindsRating(t *testing.T) {
+	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+	ctx.Request = httptest.NewRequest("POST", "/recipes/1/rating", bytes.NewBufferString(`{"rating":5}`))
+	ctx.Request.Header.Set("Content-Type", "application/json")
+
+	var request RateRecipeRequest
+	require.NoError(t, ctx.ShouldBindJSON(&request))
+	assert.Equal(t, 5, request.Rating)
+}
+
+func TestRateRecipeRequestRejectsInvalidRatings(t *testing.T) {
+	testCases := map[string]string{
+		"missing rating":    `{}`,
+		"zero rating":       `{"rating":0}`,
+		"negative rating":   `{"rating":-1}`,
+		"rating above five": `{"rating":6}`,
+	}
+
+	for name, body := range testCases {
+		t.Run(name, func(t *testing.T) {
+			ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+			ctx.Request = httptest.NewRequest("POST", "/recipes/1/rating", bytes.NewBufferString(body))
+			ctx.Request.Header.Set("Content-Type", "application/json")
+
+			var request RateRecipeRequest
+			assert.Error(t, ctx.ShouldBindJSON(&request))
+		})
+	}
+}
+
 func TestGetRecipesQueryBindsTriStateFavoriteFilter(t *testing.T) {
 	testCases := map[string]*bool{
 		"":               nil,

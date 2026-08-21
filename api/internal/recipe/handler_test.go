@@ -415,6 +415,61 @@ func performUnfavoriteRequest(t *testing.T, handler *handler, id string, userID 
 	return response
 }
 
+func TestHandlerRateRatesRecipeForAuthenticatedUser(t *testing.T) {
+	service := NewMockService(t)
+	userID := uuid.New()
+	service.EXPECT().Rate(mock.Anything, 42, userID, 5).Return(nil)
+
+	response := performRateRequest(t, NewHandler(service), "42", `{"rating":5}`, userID, true)
+
+	assert.Equal(t, http.StatusNoContent, response.Code)
+	assert.Empty(t, response.Body.Bytes())
+}
+
+func TestHandlerRateRejectsMissingAuthenticatedUserWithoutCallingService(t *testing.T) {
+	response := performRateRequest(t, NewHandler(NewMockService(t)), "42", `{"rating":5}`, uuid.Nil, false)
+
+	assertErrorMessage(t, response, http.StatusUnauthorized, "unauthorized")
+}
+
+func TestHandlerRateRejectsNonIntegerIDWithoutCallingService(t *testing.T) {
+	response := performRateRequest(t, NewHandler(NewMockService(t)), "abc", `{"rating":5}`, uuid.New(), true)
+
+	assertErrorMessage(t, response, http.StatusBadRequest, "invalid request")
+}
+
+func TestHandlerRateRejectsInvalidRequestWithoutCallingService(t *testing.T) {
+	response := performRateRequest(t, NewHandler(NewMockService(t)), "42", `{"rating":0}`, uuid.New(), true)
+
+	assertErrorMessage(t, response, http.StatusBadRequest, "invalid request")
+}
+
+func TestHandlerRateMapsUnexpectedErrorToInternalError(t *testing.T) {
+	service := NewMockService(t)
+	service.EXPECT().Rate(mock.Anything, 42, mock.Anything, 5).Return(errors.New("database unavailable"))
+
+	response := performRateRequest(t, NewHandler(service), "42", `{"rating":5}`, uuid.New(), true)
+
+	assertErrorMessage(t, response, http.StatusInternalServerError, "internal server error")
+}
+
+func performRateRequest(t *testing.T, handler *handler, id string, body string, userID uuid.UUID, authenticated bool) *httptest.ResponseRecorder {
+	t.Helper()
+	gin.SetMode(gin.TestMode)
+	response := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(response)
+	request := httptest.NewRequest(http.MethodPost, "/recipes/"+id+"/rating", bytes.NewBufferString(body))
+	request.Header.Set("Content-Type", "application/json")
+	if authenticated {
+		request = request.WithContext(reqctx.WithUserID(request.Context(), userID))
+	}
+	ctx.Request = request
+	ctx.Params = gin.Params{{Key: "id", Value: id}}
+	handler.Rate(ctx)
+	ctx.Writer.WriteHeaderNow()
+	return response
+}
+
 func performDeleteRequest(t *testing.T, handler *handler, id string, userID uuid.UUID, authenticated bool) *httptest.ResponseRecorder {
 	t.Helper()
 	gin.SetMode(gin.TestMode)

@@ -48,6 +48,10 @@ func (req CreateRecipeRequest) ToRecipe() Recipe {
 
 type ReplaceRecipeRequest = CreateRecipeRequest
 
+type RateRecipeRequest struct {
+	Rating int `json:"rating" binding:"required,min=1,max=5"`
+}
+
 type CreateRecipeResponse struct {
 	ID int `json:"id"`
 }

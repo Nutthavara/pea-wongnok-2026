@@ -180,6 +180,35 @@ func (repo *repository) Unfavorite(ctx context.Context, userID uuid.UUID, recipe
 	return nil
 }
 
+func (repo *repository) Rate(ctx context.Context, userID uuid.UUID, recipeID int, score float64) error {
+	if err := repo.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var count int64
+		if err := tx.Model(&RecipeRating{}).Where("user_id = ? AND recipe_id = ?", userID, recipeID).Count(&count).Error; err != nil {
+			return err
+		}
+
+		if count > 0 {
+			return nil
+		}
+
+		if err := tx.Create(&RecipeRating{UserID: userID, RecipeID: recipeID, Score: score}).Error; err != nil {
+			return err
+		}
+
+		var average float64
+		if err := tx.Model(&RecipeRating{}).Where("recipe_id = ?", recipeID).Select("COALESCE(AVG(score), 0)").Scan(&average).Error; err != nil {
+			return err
+		}
+
+		return tx.Model(&Recipe{}).Where("id = ?", recipeID).Update("average_rating", average).Error
+
+	}); err != nil {
+		return fmt.Errorf("rate recipe %d: %w", recipeID, err)
+	}
+
+	return nil
+}
+
 func (repo *repository) DifficultyExists(ctx context.Context, id string) (bool, error) {
 	var count int64
 
