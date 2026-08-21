@@ -22,7 +22,6 @@ func (logging Logging) SlogLevel() slog.Level {
 	return level
 }
 
-// [CHANGE] gorm logger
 func (l Logging) GormLogLevel() logger.LogLevel {
 	switch l.Level {
 	case "DEBUG":

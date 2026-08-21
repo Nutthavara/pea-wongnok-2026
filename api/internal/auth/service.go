@@ -83,13 +83,11 @@ func (svc *service) HandleCallback(ctx context.Context, code, state string) (str
 		return "", fmt.Errorf("consume state: %w", err)
 	}
 
-	// [CHANGE] 3 Return values from 2
 	credential, claims, err := svc.exchangeCode(ctx, code)
 	if err != nil {
 		return "", fmt.Errorf("exchange code: %w", err)
 	}
 
-	// [CHANGE] Upsert keycloak user
 	if err := svc.userService.UpsertFromKeycloak(ctx, user.KeycloakUser{
 		UID:               claims.Subject,
 		Email:             claims.Email,
@@ -160,7 +158,6 @@ func generateRandomToken() (string, error) {
 	return base64.RawURLEncoding.EncodeToString(buffer), nil
 }
 
-// [CHANGE] เปลี่ยนให้ exchange return payload ของ keycloak claim ออกมาด้วย
 func (svc *service) exchangeCode(ctx context.Context, code string) (Credential, KeycloakClaims, error) {
 	token, err := svc.oauth2.Exchange(ctx, code)
 	if err != nil {

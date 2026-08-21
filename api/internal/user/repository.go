@@ -37,7 +37,6 @@ func (repo *repository) FindByID(ctx context.Context, id uuid.UUID) (*User, erro
 	return &result, nil
 }
 
-// [CHANGE] เพิ่ม
 func (repo *repository) FindByUID(ctx context.Context, uid string) (*User, error) {
 	var result User
 
@@ -52,12 +51,10 @@ func (repo *repository) FindByUID(ctx context.Context, uid string) (*User, error
 	return &result, nil
 }
 
-// [CHANGE] เพิ่ม
 func (repo *repository) Create(ctx context.Context, user User) error {
 	return repo.db.WithContext(ctx).Create(&user).Error
 }
 
-// [CHANGE] เพิ่ม
 func (repo *repository) Update(ctx context.Context, user User) error {
 	return repo.db.WithContext(ctx).Save(&user).Error
 }
