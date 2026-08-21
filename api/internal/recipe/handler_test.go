@@ -34,13 +34,13 @@ func TestHandlerCreateCreatesRecipeForAuthenticatedUser(t *testing.T) {
 func TestHandlerCreateRejectsInvalidRequestWithoutCallingService(t *testing.T) {
 	response := performCreateRequest(t, NewHandler(NewMockService(t)), `{`, uuid.New(), true)
 
-	assertErrorCode(t, response, http.StatusBadRequest, "invalid_request")
+	assertErrorMessage(t, response, http.StatusBadRequest, "invalid request")
 }
 
 func TestHandlerCreateRejectsMissingAuthenticatedUserWithoutCallingService(t *testing.T) {
 	response := performCreateRequest(t, NewHandler(NewMockService(t)), validCreateRecipeJSON, uuid.Nil, false)
 
-	assertErrorCode(t, response, http.StatusUnauthorized, "unauthorized")
+	assertErrorMessage(t, response, http.StatusUnauthorized, "unauthorized")
 }
 
 func TestHandlerCreateMapsInvalidReferencesToInvalidRequest(t *testing.T) {
@@ -50,7 +50,7 @@ func TestHandlerCreateMapsInvalidReferencesToInvalidRequest(t *testing.T) {
 
 	response := performCreateRequest(t, NewHandler(service), validCreateRecipeJSON, creatorID, true)
 
-	assertErrorCode(t, response, http.StatusBadRequest, "invalid_request")
+	assertErrorMessage(t, response, http.StatusBadRequest, "invalid request")
 }
 
 func TestHandlerCreateMapsUnexpectedErrorToInternalError(t *testing.T) {
@@ -60,7 +60,7 @@ func TestHandlerCreateMapsUnexpectedErrorToInternalError(t *testing.T) {
 
 	response := performCreateRequest(t, NewHandler(service), validCreateRecipeJSON, creatorID, true)
 
-	assertErrorCode(t, response, http.StatusInternalServerError, "internal_error")
+	assertErrorMessage(t, response, http.StatusInternalServerError, "internal server error")
 }
 
 func performCreateRequest(t *testing.T, handler *handler, body string, userID uuid.UUID, authenticated bool) *httptest.ResponseRecorder {
@@ -78,10 +78,10 @@ func performCreateRequest(t *testing.T, handler *handler, body string, userID uu
 	return response
 }
 
-func assertErrorCode(t *testing.T, response *httptest.ResponseRecorder, status int, code string) {
+func assertErrorMessage(t *testing.T, response *httptest.ResponseRecorder, status int, message string) {
 	t.Helper()
 	assert.Equal(t, status, response.Code)
 	var body map[string]string
 	assert.NoError(t, json.Unmarshal(response.Body.Bytes(), &body))
-	assert.Equal(t, code, body["code"])
+	assert.Equal(t, message, body["message"])
 }
