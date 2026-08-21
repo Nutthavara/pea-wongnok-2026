@@ -124,6 +124,50 @@ func TestRepositoryCreateRollsBackWhenChildInsertFails(t *testing.T) {
 	assert.Zero(t, count)
 }
 
+func TestRepositoryHasActiveReferences(t *testing.T) {
+	db := newIntegrationDB(t)
+	repo := NewRepository(db)
+
+	t.Run("active difficulty and duration", func(t *testing.T) {
+		active, err := repo.HasActiveReferences(context.Background(), "easy", "10m")
+
+		require.NoError(t, err)
+		assert.True(t, active)
+	})
+
+	t.Run("missing difficulty", func(t *testing.T) {
+		active, err := repo.HasActiveReferences(context.Background(), "missing", "10m")
+
+		require.NoError(t, err)
+		assert.False(t, active)
+	})
+
+	t.Run("missing duration", func(t *testing.T) {
+		active, err := repo.HasActiveReferences(context.Background(), "easy", "missing")
+
+		require.NoError(t, err)
+		assert.False(t, active)
+	})
+
+	t.Run("soft-deleted difficulty", func(t *testing.T) {
+		require.NoError(t, db.Exec("UPDATE difficulties SET deleted_at = now() WHERE id = ?", "hard").Error)
+
+		active, err := repo.HasActiveReferences(context.Background(), "hard", "10m")
+
+		require.NoError(t, err)
+		assert.False(t, active)
+	})
+
+	t.Run("soft-deleted duration", func(t *testing.T) {
+		require.NoError(t, db.Exec("UPDATE durations SET deleted_at = now() WHERE id = ?", "60m").Error)
+
+		active, err := repo.HasActiveReferences(context.Background(), "easy", "60m")
+
+		require.NoError(t, err)
+		assert.False(t, active)
+	})
+}
+
 func newIntegrationDB(t *testing.T) *gorm.DB {
 	t.Helper()
 	ctx := context.Background()

@@ -17,6 +17,24 @@ func NewRepository(db *gorm.DB) *repository {
 	}
 }
 
+func (repo *repository) HasActiveReferences(ctx context.Context, difficultyID, durationID string) (bool, error) {
+	var difficultyCount int64
+	if err := repo.db.WithContext(ctx).Model(&Difficulty{}).Where("id = ?", difficultyID).Count(&difficultyCount).Error; err != nil {
+		return false, err
+	}
+
+	if difficultyCount == 0 {
+		return false, nil
+	}
+
+	var durationCount int64
+	if err := repo.db.WithContext(ctx).Model(&Duration{}).Where("id = ?", durationID).Count(&durationCount).Error; err != nil {
+		return false, err
+	}
+
+	return durationCount > 0, nil
+}
+
 func (repo *repository) Create(ctx context.Context, recipe Recipe) (*Recipe, error) {
 	if err := repo.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Omit(clause.Associations).Create(&recipe).Error; err != nil {

@@ -9,6 +9,22 @@ import (
 	"gorm.io/gorm"
 )
 
+type Difficulty struct {
+	ID        string `gorm:"primaryKey"`
+	Name      string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt
+}
+
+type Duration struct {
+	ID        string `gorm:"primaryKey"`
+	Name      string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt
+}
+
 type Recipe struct {
 	ID            int `gorm:"primaryKey"`
 	Name          string

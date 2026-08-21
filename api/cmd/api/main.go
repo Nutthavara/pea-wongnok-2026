@@ -16,6 +16,7 @@ import (
 	"wongnok/internal/middleware"
 	"wongnok/internal/platform/cache"
 	"wongnok/internal/platform/database"
+	"wongnok/internal/recipe"
 	"wongnok/internal/user"
 
 	_ "wongnok/docs"
@@ -98,6 +99,10 @@ func run() error {
 	})
 	authHandler := auth.NewHandler(authService)
 
+	recipeRepo := recipe.NewRepository(db)
+	recipeService := recipe.NewService(recipeRepo)
+	recipeHandler := recipe.NewHandler(recipeService)
+
 	// Register path
 	router := gin.Default()
 	if cfg.App.IsProduction() {
@@ -121,6 +126,11 @@ func run() error {
 	userGroup := v1.Group("/users")
 	userGroup.Use(middleware.JWT(oidcVerifer, userService))
 	userGroup.GET("/:id", userHandler.GetUser)
+
+	// Recipe resource
+	recipeGroup := v1.Group("/recipes")
+	recipeGroup.Use(middleware.JWT(oidcVerifer, userService))
+	recipeGroup.POST("", recipeHandler.Create)
 
 	// Register swagger
 	router.GET("swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
