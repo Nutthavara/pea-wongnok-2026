@@ -112,6 +112,74 @@ func (_c *MockService_Create_Call) RunAndReturn(run func(ctx context.Context, cr
 	return _c
 }
 
+// Get provides a mock function for the type MockService
+func (_mock *MockService) Get(ctx context.Context, id int) (*Recipe, error) {
+	ret := _mock.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Get")
+	}
+
+	var r0 *Recipe
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int) (*Recipe, error)); ok {
+		return returnFunc(ctx, id)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int) *Recipe); ok {
+		r0 = returnFunc(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*Recipe)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int) error); ok {
+		r1 = returnFunc(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockService_Get_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Get'
+type MockService_Get_Call struct {
+	*mock.Call
+}
+
+// Get is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id int
+func (_e *MockService_Expecter) Get(ctx any, id any) *MockService_Get_Call {
+	return &MockService_Get_Call{Call: _e.mock.On("Get", ctx, id)}
+}
+
+func (_c *MockService_Get_Call) Run(run func(ctx context.Context, id int)) *MockService_Get_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int
+		if args[1] != nil {
+			arg1 = args[1].(int)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockService_Get_Call) Return(recipe *Recipe, err error) *MockService_Get_Call {
+	_c.Call.Return(recipe, err)
+	return _c
+}
+
+func (_c *MockService_Get_Call) RunAndReturn(run func(ctx context.Context, id int) (*Recipe, error)) *MockService_Get_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // List provides a mock function for the type MockService
 func (_mock *MockService) List(ctx context.Context, query GetRecipesQuery) ([]Recipe, int64, error) {
 	ret := _mock.Called(ctx, query)
@@ -343,6 +411,74 @@ func (_c *MockRepository_DifficultyExists_Call) Return(b bool, err error) *MockR
 }
 
 func (_c *MockRepository_DifficultyExists_Call) RunAndReturn(run func(ctx context.Context, id string) (bool, error)) *MockRepository_DifficultyExists_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// FindByID provides a mock function for the type MockRepository
+func (_mock *MockRepository) FindByID(ctx context.Context, id int) (*Recipe, error) {
+	ret := _mock.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FindByID")
+	}
+
+	var r0 *Recipe
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int) (*Recipe, error)); ok {
+		return returnFunc(ctx, id)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int) *Recipe); ok {
+		r0 = returnFunc(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*Recipe)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int) error); ok {
+		r1 = returnFunc(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockRepository_FindByID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindByID'
+type MockRepository_FindByID_Call struct {
+	*mock.Call
+}
+
+// FindByID is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id int
+func (_e *MockRepository_Expecter) FindByID(ctx any, id any) *MockRepository_FindByID_Call {
+	return &MockRepository_FindByID_Call{Call: _e.mock.On("FindByID", ctx, id)}
+}
+
+func (_c *MockRepository_FindByID_Call) Run(run func(ctx context.Context, id int)) *MockRepository_FindByID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int
+		if args[1] != nil {
+			arg1 = args[1].(int)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_FindByID_Call) Return(recipe *Recipe, err error) *MockRepository_FindByID_Call {
+	_c.Call.Return(recipe, err)
+	return _c
+}
+
+func (_c *MockRepository_FindByID_Call) RunAndReturn(run func(ctx context.Context, id int) (*Recipe, error)) *MockRepository_FindByID_Call {
 	_c.Call.Return(run)
 	return _c
 }

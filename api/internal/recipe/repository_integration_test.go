@@ -124,6 +124,50 @@ func TestRepositoryCreateRollsBackWhenChildInsertFails(t *testing.T) {
 	assert.Zero(t, count)
 }
 
+func TestRepositoryFindByID(t *testing.T) {
+	db := newIntegrationDB(t)
+	repo := NewRepository(db)
+	creatorID := createCreator(t, db)
+
+	created, err := repo.Create(context.Background(), Recipe{
+		Name:         "Tom yum soup",
+		Description:  "A bright, spicy Thai soup.",
+		DifficultyID: "medium",
+		DurationID:   "30m",
+		CreatorID:    creatorID,
+		Ingredients:  []RecipeIngredient{{Description: "2 cups stock"}},
+		Instructions: []RecipeInstruction{{Description: "Bring the stock to a simmer."}},
+	})
+	require.NoError(t, err)
+
+	t.Run("existing recipe", func(t *testing.T) {
+		found, err := repo.FindByID(context.Background(), created.ID)
+
+		require.NoError(t, err)
+		require.NotNil(t, found)
+		assert.Equal(t, created.ID, found.ID)
+		assert.Equal(t, "medium", found.Difficulty.ID)
+		assert.Equal(t, "30m", found.Duration.ID)
+		assert.Equal(t, creatorID, found.Creator.ID)
+		require.Len(t, found.Ingredients, 1)
+		require.Len(t, found.Instructions, 1)
+	})
+
+	t.Run("missing recipe", func(t *testing.T) {
+		_, err := repo.FindByID(context.Background(), created.ID+1000)
+
+		assert.ErrorIs(t, err, ErrRecipeNotFound)
+	})
+
+	t.Run("soft-deleted recipe", func(t *testing.T) {
+		require.NoError(t, db.Delete(&Recipe{}, created.ID).Error)
+
+		_, err := repo.FindByID(context.Background(), created.ID)
+
+		assert.ErrorIs(t, err, ErrRecipeNotFound)
+	})
+}
+
 func TestRepositoryHasActiveReferences(t *testing.T) {
 	db := newIntegrationDB(t)
 	repo := NewRepository(db)

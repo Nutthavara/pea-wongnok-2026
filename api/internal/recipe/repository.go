@@ -2,6 +2,7 @@ package recipe
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"gorm.io/gorm"
@@ -65,6 +66,26 @@ func (repo *repository) Create(ctx context.Context, recipe Recipe) (*Recipe, err
 	}); err != nil {
 		return nil, err
 
+	}
+
+	return &recipe, nil
+}
+
+func (repo *repository) FindByID(ctx context.Context, id int) (*Recipe, error) {
+	var recipe Recipe
+
+	// Context
+	db := repo.db.WithContext(ctx)
+
+	// Preload
+	db = db.Preload("Difficulty").Preload("Duration").Preload("Creator").Preload("Ingredients").Preload("Instructions")
+
+	if err := db.First(&recipe, id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrRecipeNotFound
+		}
+
+		return nil, fmt.Errorf("find recipe %d: %w", id, err)
 	}
 
 	return &recipe, nil

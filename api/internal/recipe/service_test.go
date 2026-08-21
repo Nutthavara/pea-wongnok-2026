@@ -55,6 +55,27 @@ func TestServiceCreateReturnsReferenceValidationFailure(t *testing.T) {
 	assert.ErrorIs(t, err, expected)
 }
 
+func TestServiceGetReturnsRecipeFromRepository(t *testing.T) {
+	repo := NewMockRepository(t)
+	expected := &Recipe{ID: 42, Name: "Tom yum soup"}
+	repo.EXPECT().FindByID(mock.Anything, 42).Return(expected, nil)
+
+	result, err := NewService(repo).Get(context.Background(), 42)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expected, result)
+}
+
+func TestServiceGetPropagatesRecipeNotFound(t *testing.T) {
+	repo := NewMockRepository(t)
+	repo.EXPECT().FindByID(mock.Anything, 42).Return(nil, ErrRecipeNotFound)
+
+	result, err := NewService(repo).Get(context.Background(), 42)
+
+	assert.Nil(t, result)
+	assert.ErrorIs(t, err, ErrRecipeNotFound)
+}
+
 func TestServiceCreateAssignsCreatorBeforePersistence(t *testing.T) {
 	repo := NewMockRepository(t)
 	creatorID := uuid.New()

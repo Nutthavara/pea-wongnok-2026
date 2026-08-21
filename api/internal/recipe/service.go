@@ -12,6 +12,7 @@ type Repository interface {
 	Create(ctx context.Context, recipe Recipe) (*Recipe, error)
 	List(ctx context.Context, query GetRecipesQuery) ([]Recipe, int64, error)
 	DifficultyExists(ctx context.Context, id string) (bool, error)
+	FindByID(ctx context.Context, id int) (*Recipe, error)
 }
 
 type service struct {
@@ -62,4 +63,14 @@ func (svc *service) List(ctx context.Context, query GetRecipesQuery) ([]Recipe, 
 	}
 
 	return recipes, total, nil
+}
+
+func (svc *service) Get(ctx context.Context, id int) (*Recipe, error) {
+	recipe, err := svc.repository.FindByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("get recipe: %w", err)
+
+	}
+
+	return recipe, nil
 }
