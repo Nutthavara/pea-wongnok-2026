@@ -17,6 +17,7 @@ type Service interface {
 	List(ctx context.Context, query GetRecipesQuery) ([]Recipe, int64, error)
 	Get(ctx context.Context, id int) (*Recipe, error)
 	Replace(ctx context.Context, id int, userID uuid.UUID, recipe Recipe) (*Recipe, error)
+	Delete(ctx context.Context, id int, userID uuid.UUID) error
 }
 
 type handler struct {
@@ -201,4 +202,49 @@ func (hdr *handler) Replace(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, NewRecipeResponse(*recipe))
+}
+
+// Delete godoc
+//
+//	@Summary		ลบสูตรอาหาร
+//	@Description	ลบสูตรอาหารแบบ soft delete โดยผู้สร้างสูตรเท่านั้นที่ลบได้
+//	@Tags			recipes
+//	@Security		BearerAuth
+//	@Param			id	path	int	true	"Recipe ID"
+//	@Success		204
+//	@Failure		400	{object}	httputil.ErrorResponse
+//	@Failure		401	{object}	httputil.ErrorResponse
+//	@Failure		403	{object}	httputil.ErrorResponse
+//	@Failure		404	{object}	httputil.ErrorResponse
+//	@Failure		500	{object}	httputil.ErrorResponse
+//	@Router			/recipes/{id} [delete]
+func (hdr *handler) Delete(ctx *gin.Context) {
+	userID, ok := reqctx.UserID(ctx.Request.Context())
+	if !ok {
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, httputil.ErrorResponse{Message: "unauthorized"})
+		return
+	}
+
+	id, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, httputil.ErrorResponse{Message: "invalid request"})
+		return
+	}
+
+	if err := hdr.service.Delete(ctx.Request.Context(), id, userID); err != nil {
+		switch {
+		case errors.Is(err, ErrRecipeNotFound):
+			ctx.AbortWithStatusJSON(http.StatusNotFound, httputil.ErrorResponse{Message: "recipe not found"})
+
+		case errors.Is(err, ErrForbidden):
+			ctx.AbortWithStatusJSON(http.StatusForbidden, httputil.ErrorResponse{Message: "forbidden"})
+
+		default:
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, httputil.ErrorResponse{Message: "internal server error"})
+
+		}
+		return
+	}
+
+	ctx.Status(http.StatusNoContent)
 }

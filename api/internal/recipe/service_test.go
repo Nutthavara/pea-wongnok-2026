@@ -131,6 +131,35 @@ func TestServiceReplaceRejectsInactiveReferencesWithoutPersisting(t *testing.T) 
 	assert.ErrorIs(t, err, ErrReferenceDataUnavailable)
 }
 
+func TestServiceDeleteRemovesRecipeOwnedByCaller(t *testing.T) {
+	repo := NewMockRepository(t)
+	creatorID := uuid.New()
+	repo.EXPECT().FindByID(mock.Anything, 42).Return(&Recipe{ID: 42, CreatorID: creatorID}, nil)
+	repo.EXPECT().Delete(mock.Anything, 42).Return(nil)
+
+	err := NewService(repo).Delete(context.Background(), 42, creatorID)
+
+	assert.NoError(t, err)
+}
+
+func TestServiceDeletePropagatesRecipeNotFound(t *testing.T) {
+	repo := NewMockRepository(t)
+	repo.EXPECT().FindByID(mock.Anything, 42).Return(nil, ErrRecipeNotFound)
+
+	err := NewService(repo).Delete(context.Background(), 42, uuid.New())
+
+	assert.ErrorIs(t, err, ErrRecipeNotFound)
+}
+
+func TestServiceDeleteRejectsAnotherUsersRecipe(t *testing.T) {
+	repo := NewMockRepository(t)
+	repo.EXPECT().FindByID(mock.Anything, 42).Return(&Recipe{ID: 42, CreatorID: uuid.New()}, nil)
+
+	err := NewService(repo).Delete(context.Background(), 42, uuid.New())
+
+	assert.ErrorIs(t, err, ErrForbidden)
+}
+
 func TestServiceCreateAssignsCreatorBeforePersistence(t *testing.T) {
 	repo := NewMockRepository(t)
 	creatorID := uuid.New()

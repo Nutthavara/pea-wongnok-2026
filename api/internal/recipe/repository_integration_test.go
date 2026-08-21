@@ -234,6 +234,44 @@ func TestRepositoryFindByID(t *testing.T) {
 	})
 }
 
+func TestRepositoryDelete(t *testing.T) {
+	db := newIntegrationDB(t)
+	repo := NewRepository(db)
+	creatorID := createCreator(t, db)
+
+	created, err := repo.Create(context.Background(), Recipe{
+		Name:         "Tom yum soup",
+		Description:  "A bright, spicy Thai soup.",
+		DifficultyID: "medium",
+		DurationID:   "30m",
+		CreatorID:    creatorID,
+	})
+	require.NoError(t, err)
+
+	t.Run("existing recipe", func(t *testing.T) {
+		require.NoError(t, repo.Delete(context.Background(), created.ID))
+
+		var deletedAt gorm.DeletedAt
+		require.NoError(t, db.Unscoped().Model(&Recipe{}).Where("id = ?", created.ID).Select("deleted_at").Scan(&deletedAt).Error)
+		assert.True(t, deletedAt.Valid)
+
+		_, err := repo.FindByID(context.Background(), created.ID)
+		assert.ErrorIs(t, err, ErrRecipeNotFound)
+	})
+
+	t.Run("missing recipe", func(t *testing.T) {
+		err := repo.Delete(context.Background(), created.ID+1000)
+
+		assert.ErrorIs(t, err, ErrRecipeNotFound)
+	})
+
+	t.Run("already soft-deleted recipe", func(t *testing.T) {
+		err := repo.Delete(context.Background(), created.ID)
+
+		assert.ErrorIs(t, err, ErrRecipeNotFound)
+	})
+}
+
 func TestRepositoryHasActiveReferences(t *testing.T) {
 	db := newIntegrationDB(t)
 	repo := NewRepository(db)

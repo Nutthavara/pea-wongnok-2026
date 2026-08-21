@@ -405,6 +405,42 @@ paths:
       tags:
       - recipes
   /recipes/{id}:
+    delete:
+      description: ลบสูตรอาหารแบบ soft delete โดยผู้สร้างสูตรเท่านั้นที่ลบได้
+      parameters:
+      - description: Recipe ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/wongnok_internal_httputil.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/wongnok_internal_httputil.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/wongnok_internal_httputil.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/wongnok_internal_httputil.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/wongnok_internal_httputil.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: ลบสูตรอาหาร
+      tags:
+      - recipes
     get:
       description: ค้นหาสูตรอาหารจาก id แล้วคืนข้อมูลสูตรอาหารแบบสมบูรณ์
       parameters:

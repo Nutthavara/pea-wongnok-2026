@@ -119,6 +119,19 @@ func (repo *repository) Replace(ctx context.Context, recipe Recipe) (*Recipe, er
 	return repo.FindByID(ctx, recipe.ID)
 }
 
+func (repo *repository) Delete(ctx context.Context, id int) error {
+	result := repo.db.WithContext(ctx).Delete(&Recipe{}, id)
+	if result.Error != nil {
+		return fmt.Errorf("delete recipe %d: %w", id, result.Error)
+	}
+
+	if result.RowsAffected == 0 {
+		return ErrRecipeNotFound
+	}
+
+	return nil
+}
+
 func (repo *repository) FindByID(ctx context.Context, id int) (*Recipe, error) {
 	var recipe Recipe
 
