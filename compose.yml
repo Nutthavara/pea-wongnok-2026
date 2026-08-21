@@ -25,7 +25,6 @@ services:
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
-      KC_HOSTNAME: localhost
       KC_HOSTNAME_STRICT: "false"
       KC_HTTP_ENABLED: "true"
     ports:
@@ -33,6 +32,37 @@ services:
     volumes:
       # เก็บข้อมูลของ embedded database (dev-file) ไว้
       - wongnok-all-in-one-keycloak-data:/opt/keycloak/data
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: wongnok-all-in-one-api
+    restart: always
+    depends_on:
+      - postgres
+      - redis
+      - keycloak
+    environment:
+      APP_ENV: development
+      APP_PORT: 8080
+      APP_NAME: wongnok
+      LOG_LEVEL: DEBUG
+      LOG_FORMAT: json
+      # Database (เชื่อมต่อผ่านชื่อ service ในเครือข่าย compose แทน localhost)
+      POSTGRES_DSN: postgres://postgres:Pe@devp00l@postgres:5432?database=wongnok
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      # Keycloak
+      KEYCLOAK_BASE_URL: http://keycloak:8080
+      KEYCLOAK_REALM: pea
+      KEYCLOAK_CLIENT_ID: wongnok
+      KEYCLOAK_CLIENT_SECRET: xnk6VY3EuwkX13Rys5HCMxfTtSpoHxpRjurzDkCiOlMJkJV5aFbtG8TmOACKWldpPpssMGWrEj4Y5wyeo6CSLH
+      KEYCLOAK_REDIRECT_URL: http://localhost:8080/api/v1/auth/callback
+      FRONTEND_URL: http://localhost:3000
+    ports:
+      - "8080:8080"
 
 volumes:
   wongnok-all-in-one-pgdata:
