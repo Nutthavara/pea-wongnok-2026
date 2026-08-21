@@ -337,7 +337,8 @@ paths:
         in: query
         name: difficulty
         type: string
-      - description: กรองเฉพาะสูตรอาหารที่ผู้ใช้ปัจจุบันถูกใจไว้
+      - description: 'กรองสูตรอาหารตามสถานะรายการโปรดของผู้ใช้ปัจจุบัน: true = เฉพาะที่ถูกใจไว้,
+          false = เฉพาะที่ไม่ได้ถูกใจไว้'
         in: query
         name: favorite
         type: boolean

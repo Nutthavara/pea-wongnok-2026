@@ -196,11 +196,19 @@ func (repo *repository) List(ctx context.Context, userID uuid.UUID, query GetRec
 	if query.Name != "" {
 		db = db.Where("name ILIKE ?", ("%" + query.Name + "%"))
 	}
+
 	if query.Difficulty != "" {
 		db = db.Where("difficulty_id = ?", query.Difficulty)
 	}
-	if query.Favorite {
-		db = db.Where("id IN (?)", repo.db.Model(&UserFavorite{}).Select("recipe_id").Where("user_id = ?", userID))
+
+	if query.Favorite != nil {
+		favoriteIDs := repo.db.Model(&UserFavorite{}).Select("recipe_id").Where("user_id = ?", userID)
+
+		if *query.Favorite {
+			db = db.Where("id IN (?)", favoriteIDs)
+		} else {
+			db = db.Where("id NOT IN (?)", favoriteIDs)
+		}
 	}
 
 	var total int64

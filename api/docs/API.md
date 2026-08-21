@@ -129,16 +129,18 @@ An invalid/malformed body and an unresolvable `difficultyId`/`durationId` both c
 
 Requires `Authorization: Bearer <access-token>` like all recipe routes — this list endpoint is not public. Returns only active recipes.
 
-| Parameter    | Type            | Meaning                                                                        |
-| ------------ | --------------- | ------------------------------------------------------------------------------ |
-| `name`       | string          | Optional case-insensitive substring filter on recipe name                      |
-| `difficulty` | string          | Optional difficulty ID filter; must reference an existing difficulty           |
-| `favorite`   | boolean         | Optional; when `true`, returns only recipes the authenticated caller favorited |
-| `sort`       | `ASC` or `DESC` | Case-sensitive; orders by `createdAt`; default `DESC`                          |
-| `page`       | int             | Optional, minimum 1, default 1                                                 |
-| `limit`      | int             | Optional, 1-100, default 12                                                    |
+| Parameter    | Type            | Meaning                                                              |
+| ------------ | --------------- | -------------------------------------------------------------------- |
+| `name`       | string          | Optional case-insensitive substring filter on recipe name            |
+| `difficulty` | string          | Optional difficulty ID filter; must reference an existing difficulty |
+| `favorite`   | boolean         | Optional tri-state filter on the caller's favorites — see below      |
+| `sort`       | `ASC` or `DESC` | Case-sensitive; orders by `createdAt`; default `DESC`                |
+| `page`       | int             | Optional, minimum 1, default 1                                       |
+| `limit`      | int             | Optional, 1-100, default 12                                          |
 
-The success body is `{ "total": 1, "results": [<complete-recipe>, ...] }`; `total` is the count after all filters. Each recipe in `results` includes `isFavorite` (see [Representations](#representations)); when `favorite=true` every returned recipe has `isFavorite: true`.
+`favorite` is a tri-state filter on `user_favorites` for the authenticated caller: omitted applies no filter, `true` returns only recipes the caller favorited, `false` returns only recipes the caller has **not** favorited.
+
+The success body is `{ "total": 1, "results": [<complete-recipe>, ...] }`; `total` is the count after all filters. Each recipe in `results` includes `isFavorite` (see [Representations](#representations)); when `favorite=true` every returned recipe has `isFavorite: true`, and when `favorite=false` every returned recipe has `isFavorite: false`.
 
 | Status | Meaning                                                                                        |
 | ------ | ---------------------------------------------------------------------------------------------- |

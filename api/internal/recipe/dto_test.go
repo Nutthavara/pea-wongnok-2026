@@ -98,6 +98,38 @@ func TestCreateRecipeRequestRejectsInvalidWriteBodies(t *testing.T) {
 	}
 }
 
+func TestGetRecipesQueryBindsTriStateFavoriteFilter(t *testing.T) {
+	testCases := map[string]*bool{
+		"":               nil,
+		"favorite=true":  boolPtr(true),
+		"favorite=false": boolPtr(false),
+	}
+
+	for rawQuery, expected := range testCases {
+		t.Run(rawQuery, func(t *testing.T) {
+			target := "/recipes"
+			if rawQuery != "" {
+				target += "?" + rawQuery
+			}
+			ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+			ctx.Request = httptest.NewRequest("GET", target, nil)
+
+			var query GetRecipesQuery
+			require.NoError(t, ctx.ShouldBindQuery(&query))
+			if expected == nil {
+				assert.Nil(t, query.Favorite)
+			} else {
+				require.NotNil(t, query.Favorite)
+				assert.Equal(t, *expected, *query.Favorite)
+			}
+		})
+	}
+}
+
+func boolPtr(b bool) *bool {
+	return &b
+}
+
 func bindCreateRecipeRequest(t *testing.T, body string) CreateRecipeRequest {
 	t.Helper()
 	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())

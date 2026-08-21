@@ -310,7 +310,7 @@ func TestRepositoryList(t *testing.T) {
 	t.Run("favorite filter returns only the caller's favorited recipes", func(t *testing.T) {
 		recipes, total, err := repo.List(context.Background(), userID, GetRecipesQuery{
 			Pagination: Pagination{Page: 1, Limit: 100},
-			Favorite:   true,
+			Favorite:   boolPtr(true),
 		})
 
 		require.NoError(t, err)
@@ -320,17 +320,43 @@ func TestRepositoryList(t *testing.T) {
 		assert.True(t, recipes[0].IsFavorite)
 	})
 
+	t.Run("favorite=false filter returns only the caller's non-favorited recipes", func(t *testing.T) {
+		recipes, total, err := repo.List(context.Background(), userID, GetRecipesQuery{
+			Pagination: Pagination{Page: 1, Limit: 100},
+			Favorite:   boolPtr(false),
+		})
+
+		require.NoError(t, err)
+		assert.EqualValues(t, 1, total)
+		require.Len(t, recipes, 1)
+		assert.Equal(t, notFavorited.ID, recipes[0].ID)
+		assert.False(t, recipes[0].IsFavorite)
+	})
+
 	t.Run("favorite filter is scoped to the requesting user", func(t *testing.T) {
 		otherUserID := createCreator(t, db)
 
 		recipes, total, err := repo.List(context.Background(), otherUserID, GetRecipesQuery{
 			Pagination: Pagination{Page: 1, Limit: 100},
-			Favorite:   true,
+			Favorite:   boolPtr(true),
 		})
 
 		require.NoError(t, err)
 		assert.Zero(t, total)
 		assert.Empty(t, recipes)
+	})
+
+	t.Run("favorite=false filter is scoped to the requesting user", func(t *testing.T) {
+		otherUserID := createCreator(t, db)
+
+		recipes, total, err := repo.List(context.Background(), otherUserID, GetRecipesQuery{
+			Pagination: Pagination{Page: 1, Limit: 100},
+			Favorite:   boolPtr(false),
+		})
+
+		require.NoError(t, err)
+		assert.EqualValues(t, 2, total)
+		require.Len(t, recipes, 2)
 	})
 }
 

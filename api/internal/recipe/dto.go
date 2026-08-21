@@ -95,7 +95,7 @@ type GetRecipesQuery struct {
 	Pagination
 	Name       string        `form:"name"`
 	Difficulty string        `form:"difficulty"`
-	Favorite   bool          `form:"favorite"`
+	Favorite   *bool         `form:"favorite"`
 	Sort       SortDirection `form:"sort" binding:"omitempty,oneof=ASC DESC"`
 }
 

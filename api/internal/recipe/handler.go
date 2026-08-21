@@ -82,7 +82,7 @@ func (hdr *handler) Create(ctx *gin.Context) {
 //	@Security		BearerAuth
 //	@Param			name		query		string	false	"ชื่อของสูตรอาหาร"
 //	@Param			difficulty	query		string	false	"Id ของความยากในการทำ"
-//	@Param			favorite	query		bool	false	"กรองเฉพาะสูตรอาหารที่ผู้ใช้ปัจจุบันถูกใจไว้"
+//	@Param			favorite	query		bool	false	"กรองสูตรอาหารตามสถานะรายการโปรดของผู้ใช้ปัจจุบัน: true = เฉพาะที่ถูกใจไว้, false = เฉพาะที่ไม่ได้ถูกใจไว้"
 //	@Param			sort		query		string	false	"เรียงลำดับตามเวลาที่สร้าง"	Enums(ASC, DESC)	default(DESC)
 //	@Param			page		query		int		false	"หน้าที่ต้องการแสดง"		minimum(1)			default(1)
 //	@Param			limit		query		int		false	"จำนวนรายการต่อหน้า"		minimum(1)			maximum(100)	default(12)

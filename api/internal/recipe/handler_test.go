@@ -131,9 +131,27 @@ func TestHandlerGetRecipesReturnsFavoriteFilteredResultsForAuthenticatedUser(t *
 		Creator:    user.User{ID: uuid.New(), Name: convutil.ToPointer("Somchai")},
 		IsFavorite: true,
 	}}
-	service.EXPECT().List(mock.Anything, userID, GetRecipesQuery{Favorite: true}).Return(recipes, int64(1), nil)
+	service.EXPECT().List(mock.Anything, userID, GetRecipesQuery{Favorite: boolPtr(true)}).Return(recipes, int64(1), nil)
 
 	response := performGetRecipesRequest(t, NewHandler(service), "favorite=true", userID, true)
+
+	assert.Equal(t, http.StatusOK, response.Code)
+	expected, err := json.Marshal(NewListRecipesResponse(recipes, 1))
+	assert.NoError(t, err)
+	assert.JSONEq(t, string(expected), response.Body.String())
+}
+
+func TestHandlerGetRecipesReturnsNonFavoriteFilteredResultsForAuthenticatedUser(t *testing.T) {
+	service := NewMockService(t)
+	userID := uuid.New()
+	recipes := []Recipe{{
+		ID:      43,
+		Name:    "Plain rice",
+		Creator: user.User{ID: uuid.New(), Name: convutil.ToPointer("Somchai")},
+	}}
+	service.EXPECT().List(mock.Anything, userID, GetRecipesQuery{Favorite: boolPtr(false)}).Return(recipes, int64(1), nil)
+
+	response := performGetRecipesRequest(t, NewHandler(service), "favorite=false", userID, true)
 
 	assert.Equal(t, http.StatusOK, response.Code)
 	expected, err := json.Marshal(NewListRecipesResponse(recipes, 1))

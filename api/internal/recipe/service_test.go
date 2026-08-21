@@ -107,14 +107,26 @@ func TestServiceListReturnsRecipesFromRepositoryWithDefaults(t *testing.T) {
 	assert.EqualValues(t, 1, total)
 }
 
-func TestServiceListPassesFavoriteFilterThrough(t *testing.T) {
+func TestServiceListPassesFavoriteTrueFilterThrough(t *testing.T) {
 	repo := NewMockRepository(t)
 	userID := uuid.New()
 	repo.EXPECT().List(mock.Anything, userID, mock.MatchedBy(func(query GetRecipesQuery) bool {
-		return query.Favorite
+		return query.Favorite != nil && *query.Favorite
 	})).Return(nil, int64(0), nil)
 
-	_, _, err := NewService(repo).List(context.Background(), userID, GetRecipesQuery{Favorite: true})
+	_, _, err := NewService(repo).List(context.Background(), userID, GetRecipesQuery{Favorite: boolPtr(true)})
+
+	assert.NoError(t, err)
+}
+
+func TestServiceListPassesFavoriteFalseFilterThrough(t *testing.T) {
+	repo := NewMockRepository(t)
+	userID := uuid.New()
+	repo.EXPECT().List(mock.Anything, userID, mock.MatchedBy(func(query GetRecipesQuery) bool {
+		return query.Favorite != nil && !*query.Favorite
+	})).Return(nil, int64(0), nil)
+
+	_, _, err := NewService(repo).List(context.Background(), userID, GetRecipesQuery{Favorite: boolPtr(false)})
 
 	assert.NoError(t, err)
 }
