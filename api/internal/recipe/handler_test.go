@@ -290,6 +290,54 @@ func performFavoriteRequest(t *testing.T, handler *handler, id string, userID uu
 	return response
 }
 
+func TestHandlerUnfavoriteUnfavoritesRecipeForAuthenticatedUser(t *testing.T) {
+	service := NewMockService(t)
+	userID := uuid.New()
+	service.EXPECT().Unfavorite(mock.Anything, 42, userID).Return(nil)
+
+	response := performUnfavoriteRequest(t, NewHandler(service), "42", userID, true)
+
+	assert.Equal(t, http.StatusNoContent, response.Code)
+	assert.Empty(t, response.Body.Bytes())
+}
+
+func TestHandlerUnfavoriteRejectsMissingAuthenticatedUserWithoutCallingService(t *testing.T) {
+	response := performUnfavoriteRequest(t, NewHandler(NewMockService(t)), "42", uuid.Nil, false)
+
+	assertErrorMessage(t, response, http.StatusUnauthorized, "unauthorized")
+}
+
+func TestHandlerUnfavoriteRejectsNonIntegerIDWithoutCallingService(t *testing.T) {
+	response := performUnfavoriteRequest(t, NewHandler(NewMockService(t)), "abc", uuid.New(), true)
+
+	assertErrorMessage(t, response, http.StatusBadRequest, "invalid request")
+}
+
+func TestHandlerUnfavoriteMapsUnexpectedErrorToInternalError(t *testing.T) {
+	service := NewMockService(t)
+	service.EXPECT().Unfavorite(mock.Anything, 42, mock.Anything).Return(errors.New("database unavailable"))
+
+	response := performUnfavoriteRequest(t, NewHandler(service), "42", uuid.New(), true)
+
+	assertErrorMessage(t, response, http.StatusInternalServerError, "internal server error")
+}
+
+func performUnfavoriteRequest(t *testing.T, handler *handler, id string, userID uuid.UUID, authenticated bool) *httptest.ResponseRecorder {
+	t.Helper()
+	gin.SetMode(gin.TestMode)
+	response := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(response)
+	request := httptest.NewRequest(http.MethodDelete, "/recipes/"+id+"/favorite", nil)
+	if authenticated {
+		request = request.WithContext(reqctx.WithUserID(request.Context(), userID))
+	}
+	ctx.Request = request
+	ctx.Params = gin.Params{{Key: "id", Value: id}}
+	handler.Unfavorite(ctx)
+	ctx.Writer.WriteHeaderNow()
+	return response
+}
+
 func performDeleteRequest(t *testing.T, handler *handler, id string, userID uuid.UUID, authenticated bool) *httptest.ResponseRecorder {
 	t.Helper()
 	gin.SetMode(gin.TestMode)

@@ -170,6 +170,16 @@ func (repo *repository) Favorite(ctx context.Context, userID uuid.UUID, recipeID
 	return nil
 }
 
+func (repo *repository) Unfavorite(ctx context.Context, userID uuid.UUID, recipeID int) error {
+	if err := repo.db.WithContext(ctx).Unscoped().Where(
+		"user_id = ? AND recipe_id = ?", userID, recipeID,
+	).Delete(&UserFavorite{}).Error; err != nil {
+		return fmt.Errorf("unfavorite recipe %d: %w", recipeID, err)
+	}
+
+	return nil
+}
+
 func (repo *repository) DifficultyExists(ctx context.Context, id string) (bool, error) {
 	var count int64
 

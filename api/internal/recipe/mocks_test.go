@@ -460,6 +460,69 @@ func (_c *MockService_Replace_Call) RunAndReturn(run func(ctx context.Context, i
 	return _c
 }
 
+// Unfavorite provides a mock function for the type MockService
+func (_mock *MockService) Unfavorite(ctx context.Context, id int, userID uuid.UUID) error {
+	ret := _mock.Called(ctx, id, userID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Unfavorite")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int, uuid.UUID) error); ok {
+		r0 = returnFunc(ctx, id, userID)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockService_Unfavorite_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Unfavorite'
+type MockService_Unfavorite_Call struct {
+	*mock.Call
+}
+
+// Unfavorite is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id int
+//   - userID uuid.UUID
+func (_e *MockService_Expecter) Unfavorite(ctx any, id any, userID any) *MockService_Unfavorite_Call {
+	return &MockService_Unfavorite_Call{Call: _e.mock.On("Unfavorite", ctx, id, userID)}
+}
+
+func (_c *MockService_Unfavorite_Call) Run(run func(ctx context.Context, id int, userID uuid.UUID)) *MockService_Unfavorite_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int
+		if args[1] != nil {
+			arg1 = args[1].(int)
+		}
+		var arg2 uuid.UUID
+		if args[2] != nil {
+			arg2 = args[2].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockService_Unfavorite_Call) Return(err error) *MockService_Unfavorite_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockService_Unfavorite_Call) RunAndReturn(run func(ctx context.Context, id int, userID uuid.UUID) error) *MockService_Unfavorite_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewMockRepository creates a new instance of MockRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewMockRepository(t interface {
@@ -1019,6 +1082,69 @@ func (_c *MockRepository_Replace_Call) Return(recipe1 *Recipe, err error) *MockR
 }
 
 func (_c *MockRepository_Replace_Call) RunAndReturn(run func(ctx context.Context, recipe Recipe) (*Recipe, error)) *MockRepository_Replace_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Unfavorite provides a mock function for the type MockRepository
+func (_mock *MockRepository) Unfavorite(ctx context.Context, userID uuid.UUID, recipeID int) error {
+	ret := _mock.Called(ctx, userID, recipeID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Unfavorite")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int) error); ok {
+		r0 = returnFunc(ctx, userID, recipeID)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// MockRepository_Unfavorite_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Unfavorite'
+type MockRepository_Unfavorite_Call struct {
+	*mock.Call
+}
+
+// Unfavorite is a helper method to define mock.On call
+//   - ctx context.Context
+//   - userID uuid.UUID
+//   - recipeID int
+func (_e *MockRepository_Expecter) Unfavorite(ctx any, userID any, recipeID any) *MockRepository_Unfavorite_Call {
+	return &MockRepository_Unfavorite_Call{Call: _e.mock.On("Unfavorite", ctx, userID, recipeID)}
+}
+
+func (_c *MockRepository_Unfavorite_Call) Run(run func(ctx context.Context, userID uuid.UUID, recipeID int)) *MockRepository_Unfavorite_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 int
+		if args[2] != nil {
+			arg2 = args[2].(int)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRepository_Unfavorite_Call) Return(err error) *MockRepository_Unfavorite_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *MockRepository_Unfavorite_Call) RunAndReturn(run func(ctx context.Context, userID uuid.UUID, recipeID int) error) *MockRepository_Unfavorite_Call {
 	_c.Call.Return(run)
 	return _c
 }

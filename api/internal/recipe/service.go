@@ -16,6 +16,7 @@ type Repository interface {
 	Replace(ctx context.Context, recipe Recipe) (*Recipe, error)
 	Delete(ctx context.Context, id int) error
 	Favorite(ctx context.Context, userID uuid.UUID, recipeID int) error
+	Unfavorite(ctx context.Context, userID uuid.UUID, recipeID int) error
 }
 
 type service struct {
@@ -111,6 +112,14 @@ func (svc *service) Replace(ctx context.Context, id int, userID uuid.UUID, recip
 func (svc *service) Favorite(ctx context.Context, id int, userID uuid.UUID) error {
 	if err := svc.repository.Favorite(ctx, userID, id); err != nil {
 		return fmt.Errorf("favorite recipe: %w", err)
+	}
+
+	return nil
+}
+
+func (svc *service) Unfavorite(ctx context.Context, id int, userID uuid.UUID) error {
+	if err := svc.repository.Unfavorite(ctx, userID, id); err != nil {
+		return fmt.Errorf("unfavorite recipe: %w", err)
 	}
 
 	return nil

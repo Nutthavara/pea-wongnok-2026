@@ -552,6 +552,50 @@
                         }
                     }
                 }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "ลบสูตรอาหารที่ระบุออกจากรายการโปรดของผู้ใช้ที่ยืนยันตัวตนแล้วแบบ hard delete หากไม่เคยเพิ่มไว้จะไม่มีผล",
+                "tags": [
+                    "recipes"
+                ],
+                "summary": "ลบสูตรอาหารออกจากรายการโปรด",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Recipe ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/wongnok_internal_httputil.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/wongnok_internal_httputil.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/wongnok_internal_httputil.ErrorResponse"
+                        }
+                    }
+                }
             }
         },
         "/users/{id}": {

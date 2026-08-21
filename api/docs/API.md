@@ -198,16 +198,16 @@ Calling this repeatedly for the same recipe is a no-op after the first call: if 
 
 ### `DELETE /recipes/{recipeId}/favorite`
 
-`recipeId` is a required integer. Removes the recipe from the authenticated caller's favorites.
+`recipeId` is a required integer. Removes the recipe from the authenticated caller's favorites by deleting the matching `user_favorites` row outright — a hard delete, not the soft-delete pattern used for recipes (`deleted_at` is never set; the row is gone).
 
 | Status | Meaning                                                  |
 | ------ | -------------------------------------------------------- |
-| 200    | Unfavorited (or already not favorited); no response body |
+| 204    | Unfavorited (or already not favorited); no response body |
 | 400    | Invalid `recipeId`                                       |
 | 401    | Error body                                               |
 | 500    | Error body                                               |
 
-Unlike recipe deletion, this returns `200`, not `204`. If no matching `user_favorites` row exists, the response is still `200` — not `404`.
+If no matching `user_favorites` row exists, the response is still `204` — not `404` — and no row is deleted.
 
 ## Users
 

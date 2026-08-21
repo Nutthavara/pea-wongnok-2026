@@ -541,6 +541,35 @@ paths:
       tags:
       - recipes
   /recipes/{id}/favorite:
+    delete:
+      description: ลบสูตรอาหารที่ระบุออกจากรายการโปรดของผู้ใช้ที่ยืนยันตัวตนแล้วแบบ
+        hard delete หากไม่เคยเพิ่มไว้จะไม่มีผล
+      parameters:
+      - description: Recipe ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/wongnok_internal_httputil.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/wongnok_internal_httputil.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/wongnok_internal_httputil.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: ลบสูตรอาหารออกจากรายการโปรด
+      tags:
+      - recipes
     post:
       description: เพิ่มสูตรอาหารที่ระบุเข้ารายการโปรดของผู้ใช้ที่ยืนยันตัวตนแล้ว
         หากเคยเพิ่มไว้แล้วจะไม่มีผลซ้ำ

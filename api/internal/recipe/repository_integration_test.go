@@ -364,6 +364,38 @@ func TestRepositoryFavorite(t *testing.T) {
 	})
 }
 
+func TestRepositoryUnfavorite(t *testing.T) {
+	db := newIntegrationDB(t)
+	repo := NewRepository(db)
+	userID := createCreator(t, db)
+	creatorID := createCreator(t, db)
+
+	created, err := repo.Create(context.Background(), Recipe{
+		Name:         "Tom yum soup",
+		Description:  "A bright, spicy Thai soup.",
+		DifficultyID: "medium",
+		DurationID:   "30m",
+		CreatorID:    creatorID,
+	})
+	require.NoError(t, err)
+
+	t.Run("existing favorite", func(t *testing.T) {
+		require.NoError(t, repo.Favorite(context.Background(), userID, created.ID))
+
+		require.NoError(t, repo.Unfavorite(context.Background(), userID, created.ID))
+
+		var count int64
+		require.NoError(t, db.Unscoped().Model(&UserFavorite{}).Where("user_id = ? AND recipe_id = ?", userID, created.ID).Count(&count).Error)
+		assert.Zero(t, count)
+	})
+
+	t.Run("missing favorite", func(t *testing.T) {
+		err := repo.Unfavorite(context.Background(), userID, created.ID)
+
+		assert.NoError(t, err)
+	})
+}
+
 func newIntegrationDB(t *testing.T) *gorm.DB {
 	t.Helper()
 	ctx := context.Background()
