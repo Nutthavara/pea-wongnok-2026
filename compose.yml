@@ -32,6 +32,8 @@ services:
     volumes:
       # เก็บข้อมูลของ embedded database (dev-file) ไว้
       - wongnok-all-in-one-keycloak-data:/opt/keycloak/data
+      # snapshot ของ realm/client/client scopes/users สำหรับ --import-realm
+      - ./keycloak/import:/opt/keycloak/data/import:ro
 
   api:
     build:
