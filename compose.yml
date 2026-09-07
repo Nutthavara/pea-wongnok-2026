@@ -5,6 +5,7 @@ services:
     restart: always
     environment:
       POSTGRES_PASSWORD: Pe@devp00l
+      POSTGRES_DB: wongnok
     ports:
       - "5532:5432"
     volumes:
@@ -52,7 +53,7 @@ services:
       LOG_LEVEL: DEBUG
       LOG_FORMAT: json
       # Database (เชื่อมต่อผ่านชื่อ service ในเครือข่าย compose แทน localhost)
-      POSTGRES_DSN: postgres://postgres:Pe@devp00l@postgres:5432?database=wongnok
+      POSTGRES_DSN: postgres://postgres:Pe%40devp00l@postgres:5432/wongnok?sslmode=disable
       # Redis
       REDIS_HOST: redis
       REDIS_PORT: 6379
