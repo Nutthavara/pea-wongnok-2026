@@ -1,0 +1,559 @@
+package recipe
+
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
+	"wongnok/internal/convutil"
+	"wongnok/internal/reqctx"
+	"wongnok/internal/user"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+)
+
+const validCreateRecipeJSON = `{"name":"Tom yum soup","description":"A bright, spicy Thai soup.","difficultyId":"medium","durationId":"30m","ingredients":[{"description":"2 cups stock"}],"instructions":[{"description":"Simmer the stock."}]}`
+
+func TestHandlerCreateCreatesRecipeForAuthenticatedUser(t *testing.T) {
+	service := NewMockService(t)
+	creatorID := uuid.New()
+	service.EXPECT().Create(mock.Anything, creatorID, Recipe{
+		Name: "Tom yum soup", Description: "A bright, spicy Thai soup.", DifficultyID: "medium", DurationID: "30m",
+		Ingredients: []RecipeIngredient{{Description: "2 cups stock"}}, Instructions: []RecipeInstruction{{Description: "Simmer the stock."}},
+	}).Return(&Recipe{ID: 42}, nil)
+
+	response := performCreateRequest(t, NewHandler(service), validCreateRecipeJSON, creatorID, true)
+
+	assert.Equal(t, http.StatusCreated, response.Code)
+	assert.JSONEq(t, `{"id":42}`, response.Body.String())
+}
+
+func TestHandlerCreateRejectsInvalidRequestWithoutCallingService(t *testing.T) {
+	response := performCreateRequest(t, NewHandler(NewMockService(t)), `{`, uuid.New(), true)
+
+	assertErrorMessage(t, response, http.StatusBadRequest, "invalid request")
+}
+
+func TestHandlerCreateRejectsMissingAuthenticatedUserWithoutCallingService(t *testing.T) {
+	response := performCreateRequest(t, NewHandler(NewMockService(t)), validCreateRecipeJSON, uuid.Nil, false)
+
+	assertErrorMessage(t, response, http.StatusUnauthorized, "unauthorized")
+}
+
+func TestHandlerCreateMapsInvalidReferencesToInvalidRequest(t *testing.T) {
+	service := NewMockService(t)
+	creatorID := uuid.New()
+	service.EXPECT().Create(mock.Anything, creatorID, mock.Anything).Return(nil, ErrInvalidReferenceData)
+
+	response := performCreateRequest(t, NewHandler(service), validCreateRecipeJSON, creatorID, true)
+
+	assertErrorMessage(t, response, http.StatusBadRequest, "invalid request")
+}
+
+func TestHandlerCreateMapsUnexpectedErrorToInternalError(t *testing.T) {
+	service := NewMockService(t)
+	creatorID := uuid.New()
+	service.EXPECT().Create(mock.Anything, creatorID, mock.Anything).Return(nil, errors.New("database unavailable"))
+
+	response := performCreateRequest(t, NewHandler(service), validCreateRecipeJSON, creatorID, true)
+
+	assertErrorMessage(t, response, http.StatusInternalServerError, "internal server error")
+}
+
+func TestHandlerGetRecipeReturnsRecipe(t *testing.T) {
+	service := NewMockService(t)
+	creatorID := uuid.New()
+	userID := uuid.New()
+	createdAt := time.Now()
+	recipe := Recipe{
+		ID:          42,
+		Name:        "Tom yum soup",
+		Description: "A bright, spicy Thai soup.",
+		Difficulty:  Difficulty{ID: "medium", Name: "Medium"},
+		Duration:    Duration{ID: "30m", Name: "10 - 30 mins"},
+		Creator:     user.User{ID: creatorID, Name: convutil.ToPointer("Somchai")},
+		IsFavorite:  true,
+		CreatedAt:   createdAt,
+		UpdatedAt:   createdAt,
+	}
+	service.EXPECT().Get(mock.Anything, 42, userID).Return(&recipe, nil)
+
+	response := performGetRecipeRequest(t, NewHandler(service), "42", userID, true)
+
+	assert.Equal(t, http.StatusOK, response.Code)
+	expected, err := json.Marshal(NewRecipeResponse(recipe))
+	assert.NoError(t, err)
+	assert.JSONEq(t, string(expected), response.Body.String())
+}
+
+func TestHandlerGetRecipeRejectsMissingAuthenticatedUserWithoutCallingService(t *testing.T) {
+	response := performGetRecipeRequest(t, NewHandler(NewMockService(t)), "42", uuid.Nil, false)
+
+	assertErrorMessage(t, response, http.StatusUnauthorized, "unauthorized")
+}
+
+func TestHandlerGetRecipeRejectsNonIntegerIDWithoutCallingService(t *testing.T) {
+	response := performGetRecipeRequest(t, NewHandler(NewMockService(t)), "abc", uuid.New(), true)
+
+	assertErrorMessage(t, response, http.StatusBadRequest, "invalid request")
+}
+
+func TestHandlerGetRecipeMapsNotFoundToNotFoundResponse(t *testing.T) {
+	service := NewMockService(t)
+	service.EXPECT().Get(mock.Anything, 42, mock.Anything).Return(nil, ErrRecipeNotFound)
+
+	response := performGetRecipeRequest(t, NewHandler(service), "42", uuid.New(), true)
+
+	assertErrorMessage(t, response, http.StatusNotFound, "recipe not found")
+}
+
+func TestHandlerGetRecipeMapsUnexpectedErrorToInternalError(t *testing.T) {
+	service := NewMockService(t)
+	service.EXPECT().Get(mock.Anything, 42, mock.Anything).Return(nil, errors.New("database unavailable"))
+
+	response := performGetRecipeRequest(t, NewHandler(service), "42", uuid.New(), true)
+
+	assertErrorMessage(t, response, http.StatusInternalServerError, "internal server error")
+}
+
+func TestHandlerGetRecipesReturnsFavoriteFilteredResultsForAuthenticatedUser(t *testing.T) {
+	service := NewMockService(t)
+	userID := uuid.New()
+	recipes := []Recipe{{
+		ID:         42,
+		Name:       "Tom yum soup",
+		Creator:    user.User{ID: uuid.New(), Name: convutil.ToPointer("Somchai")},
+		IsFavorite: true,
+	}}
+	service.EXPECT().List(mock.Anything, userID, GetRecipesQuery{Favorite: boolPtr(true)}).Return(recipes, int64(1), nil)
+
+	response := performGetRecipesRequest(t, NewHandler(service), "favorite=true", userID, true)
+
+	assert.Equal(t, http.StatusOK, response.Code)
+	expected, err := json.Marshal(NewListRecipesResponse(recipes, 1))
+	assert.NoError(t, err)
+	assert.JSONEq(t, string(expected), response.Body.String())
+}
+
+func TestHandlerGetRecipesReturnsNonFavoriteFilteredResultsForAuthenticatedUser(t *testing.T) {
+	service := NewMockService(t)
+	userID := uuid.New()
+	recipes := []Recipe{{
+		ID:      43,
+		Name:    "Plain rice",
+		Creator: user.User{ID: uuid.New(), Name: convutil.ToPointer("Somchai")},
+	}}
+	service.EXPECT().List(mock.Anything, userID, GetRecipesQuery{Favorite: boolPtr(false)}).Return(recipes, int64(1), nil)
+
+	response := performGetRecipesRequest(t, NewHandler(service), "favorite=false", userID, true)
+
+	assert.Equal(t, http.StatusOK, response.Code)
+	expected, err := json.Marshal(NewListRecipesResponse(recipes, 1))
+	assert.NoError(t, err)
+	assert.JSONEq(t, string(expected), response.Body.String())
+}
+
+func TestHandlerGetRecipesRejectsMissingAuthenticatedUserWithoutCallingService(t *testing.T) {
+	response := performGetRecipesRequest(t, NewHandler(NewMockService(t)), "", uuid.Nil, false)
+
+	assertErrorMessage(t, response, http.StatusUnauthorized, "unauthorized")
+}
+
+func TestHandlerGetRecipesRejectsInvalidQueryWithoutCallingService(t *testing.T) {
+	response := performGetRecipesRequest(t, NewHandler(NewMockService(t)), "sort=UP", uuid.New(), true)
+
+	assert.Equal(t, http.StatusBadRequest, response.Code)
+}
+
+func TestHandlerGetRecipesMapsInvalidReferenceDataToInvalidRequest(t *testing.T) {
+	service := NewMockService(t)
+	userID := uuid.New()
+	service.EXPECT().List(mock.Anything, userID, mock.Anything).Return(nil, int64(0), ErrInvalidReferenceData)
+
+	response := performGetRecipesRequest(t, NewHandler(service), "difficulty=missing", userID, true)
+
+	assertErrorMessage(t, response, http.StatusBadRequest, "invalid request")
+}
+
+func TestHandlerGetRecipesMapsUnexpectedErrorToInternalError(t *testing.T) {
+	service := NewMockService(t)
+	userID := uuid.New()
+	service.EXPECT().List(mock.Anything, userID, mock.Anything).Return(nil, int64(0), errors.New("database unavailable"))
+
+	response := performGetRecipesRequest(t, NewHandler(service), "", userID, true)
+
+	assertErrorMessage(t, response, http.StatusInternalServerError, "internal server error")
+}
+
+func TestHandlerReplaceReturnsReplacedRecipe(t *testing.T) {
+	service := NewMockService(t)
+	userID := uuid.New()
+	createdAt := time.Now()
+	recipe := Recipe{
+		ID:          42,
+		Name:        "Tom yum soup",
+		Description: "A bright, spicy Thai soup.",
+		Difficulty:  Difficulty{ID: "medium", Name: "Medium"},
+		Duration:    Duration{ID: "30m", Name: "10 - 30 mins"},
+		Creator:     user.User{ID: userID, Name: convutil.ToPointer("Somchai")},
+		CreatedAt:   createdAt,
+		UpdatedAt:   createdAt,
+	}
+	service.EXPECT().Replace(mock.Anything, 42, userID, mock.Anything).Return(&recipe, nil)
+
+	response := performReplaceRequest(t, NewHandler(service), "42", validCreateRecipeJSON, userID, true)
+
+	assert.Equal(t, http.StatusOK, response.Code)
+	expected, err := json.Marshal(NewRecipeResponse(recipe))
+	assert.NoError(t, err)
+	assert.JSONEq(t, string(expected), response.Body.String())
+}
+
+func TestHandlerReplaceRejectsMissingAuthenticatedUserWithoutCallingService(t *testing.T) {
+	response := performReplaceRequest(t, NewHandler(NewMockService(t)), "42", validCreateRecipeJSON, uuid.Nil, false)
+
+	assertErrorMessage(t, response, http.StatusUnauthorized, "unauthorized")
+}
+
+func TestHandlerReplaceRejectsNonIntegerIDWithoutCallingService(t *testing.T) {
+	response := performReplaceRequest(t, NewHandler(NewMockService(t)), "abc", validCreateRecipeJSON, uuid.New(), true)
+
+	assertErrorMessage(t, response, http.StatusBadRequest, "invalid request")
+}
+
+func TestHandlerReplaceRejectsInvalidRequestWithoutCallingService(t *testing.T) {
+	response := performReplaceRequest(t, NewHandler(NewMockService(t)), "42", `{`, uuid.New(), true)
+
+	assertErrorMessage(t, response, http.StatusBadRequest, "invalid request")
+}
+
+func TestHandlerReplaceMapsRecipeNotFoundToNotFoundResponse(t *testing.T) {
+	service := NewMockService(t)
+	service.EXPECT().Replace(mock.Anything, 42, mock.Anything, mock.Anything).Return(nil, ErrRecipeNotFound)
+
+	response := performReplaceRequest(t, NewHandler(service), "42", validCreateRecipeJSON, uuid.New(), true)
+
+	assertErrorMessage(t, response, http.StatusNotFound, "recipe not found")
+}
+
+func TestHandlerReplaceMapsReferenceDataUnavailableToNotFoundResponse(t *testing.T) {
+	service := NewMockService(t)
+	service.EXPECT().Replace(mock.Anything, 42, mock.Anything, mock.Anything).Return(nil, ErrReferenceDataUnavailable)
+
+	response := performReplaceRequest(t, NewHandler(service), "42", validCreateRecipeJSON, uuid.New(), true)
+
+	assertErrorMessage(t, response, http.StatusNotFound, "recipe not found")
+}
+
+func TestHandlerReplaceMapsForbiddenToForbiddenResponse(t *testing.T) {
+	service := NewMockService(t)
+	service.EXPECT().Replace(mock.Anything, 42, mock.Anything, mock.Anything).Return(nil, ErrForbidden)
+
+	response := performReplaceRequest(t, NewHandler(service), "42", validCreateRecipeJSON, uuid.New(), true)
+
+	assertErrorMessage(t, response, http.StatusForbidden, "forbidden")
+}
+
+func TestHandlerReplaceMapsUnexpectedErrorToInternalError(t *testing.T) {
+	service := NewMockService(t)
+	service.EXPECT().Replace(mock.Anything, 42, mock.Anything, mock.Anything).Return(nil, errors.New("database unavailable"))
+
+	response := performReplaceRequest(t, NewHandler(service), "42", validCreateRecipeJSON, uuid.New(), true)
+
+	assertErrorMessage(t, response, http.StatusInternalServerError, "internal server error")
+}
+
+func TestHandlerDeleteRemovesRecipe(t *testing.T) {
+	service := NewMockService(t)
+	userID := uuid.New()
+	service.EXPECT().Delete(mock.Anything, 42, userID).Return(nil)
+
+	response := performDeleteRequest(t, NewHandler(service), "42", userID, true)
+
+	assert.Equal(t, http.StatusNoContent, response.Code)
+	assert.Empty(t, response.Body.Bytes())
+}
+
+func TestHandlerDeleteRejectsMissingAuthenticatedUserWithoutCallingService(t *testing.T) {
+	response := performDeleteRequest(t, NewHandler(NewMockService(t)), "42", uuid.Nil, false)
+
+	assertErrorMessage(t, response, http.StatusUnauthorized, "unauthorized")
+}
+
+func TestHandlerDeleteRejectsNonIntegerIDWithoutCallingService(t *testing.T) {
+	response := performDeleteRequest(t, NewHandler(NewMockService(t)), "abc", uuid.New(), true)
+
+	assertErrorMessage(t, response, http.StatusBadRequest, "invalid request")
+}
+
+func TestHandlerDeleteMapsRecipeNotFoundToNotFoundResponse(t *testing.T) {
+	service := NewMockService(t)
+	service.EXPECT().Delete(mock.Anything, 42, mock.Anything).Return(ErrRecipeNotFound)
+
+	response := performDeleteRequest(t, NewHandler(service), "42", uuid.New(), true)
+
+	assertErrorMessage(t, response, http.StatusNotFound, "recipe not found")
+}
+
+func TestHandlerDeleteMapsForbiddenToForbiddenResponse(t *testing.T) {
+	service := NewMockService(t)
+	service.EXPECT().Delete(mock.Anything, 42, mock.Anything).Return(ErrForbidden)
+
+	response := performDeleteRequest(t, NewHandler(service), "42", uuid.New(), true)
+
+	assertErrorMessage(t, response, http.StatusForbidden, "forbidden")
+}
+
+func TestHandlerDeleteMapsUnexpectedErrorToInternalError(t *testing.T) {
+	service := NewMockService(t)
+	service.EXPECT().Delete(mock.Anything, 42, mock.Anything).Return(errors.New("database unavailable"))
+
+	response := performDeleteRequest(t, NewHandler(service), "42", uuid.New(), true)
+
+	assertErrorMessage(t, response, http.StatusInternalServerError, "internal server error")
+}
+
+func TestHandlerFavoriteFavoritesRecipeForAuthenticatedUser(t *testing.T) {
+	service := NewMockService(t)
+	userID := uuid.New()
+	service.EXPECT().Favorite(mock.Anything, 42, userID).Return(nil)
+
+	response := performFavoriteRequest(t, NewHandler(service), "42", userID, true)
+
+	assert.Equal(t, http.StatusNoContent, response.Code)
+	assert.Empty(t, response.Body.Bytes())
+}
+
+func TestHandlerFavoriteRejectsMissingAuthenticatedUserWithoutCallingService(t *testing.T) {
+	response := performFavoriteRequest(t, NewHandler(NewMockService(t)), "42", uuid.Nil, false)
+
+	assertErrorMessage(t, response, http.StatusUnauthorized, "unauthorized")
+}
+
+func TestHandlerFavoriteRejectsNonIntegerIDWithoutCallingService(t *testing.T) {
+	response := performFavoriteRequest(t, NewHandler(NewMockService(t)), "abc", uuid.New(), true)
+
+	assertErrorMessage(t, response, http.StatusBadRequest, "invalid request")
+}
+
+func TestHandlerFavoriteMapsUnexpectedErrorToInternalError(t *testing.T) {
+	service := NewMockService(t)
+	service.EXPECT().Favorite(mock.Anything, 42, mock.Anything).Return(errors.New("database unavailable"))
+
+	response := performFavoriteRequest(t, NewHandler(service), "42", uuid.New(), true)
+
+	assertErrorMessage(t, response, http.StatusInternalServerError, "internal server error")
+}
+
+func performFavoriteRequest(t *testing.T, handler *handler, id string, userID uuid.UUID, authenticated bool) *httptest.ResponseRecorder {
+	t.Helper()
+	gin.SetMode(gin.TestMode)
+	response := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(response)
+	request := httptest.NewRequest(http.MethodPost, "/recipes/"+id+"/favorite", nil)
+	if authenticated {
+		request = request.WithContext(reqctx.WithUserID(request.Context(), userID))
+	}
+	ctx.Request = request
+	ctx.Params = gin.Params{{Key: "id", Value: id}}
+	handler.Favorite(ctx)
+	ctx.Writer.WriteHeaderNow()
+	return response
+}
+
+func TestHandlerUnfavoriteUnfavoritesRecipeForAuthenticatedUser(t *testing.T) {
+	service := NewMockService(t)
+	userID := uuid.New()
+	service.EXPECT().Unfavorite(mock.Anything, 42, userID).Return(nil)
+
+	response := performUnfavoriteRequest(t, NewHandler(service), "42", userID, true)
+
+	assert.Equal(t, http.StatusNoContent, response.Code)
+	assert.Empty(t, response.Body.Bytes())
+}
+
+func TestHandlerUnfavoriteRejectsMissingAuthenticatedUserWithoutCallingService(t *testing.T) {
+	response := performUnfavoriteRequest(t, NewHandler(NewMockService(t)), "42", uuid.Nil, false)
+
+	assertErrorMessage(t, response, http.StatusUnauthorized, "unauthorized")
+}
+
+func TestHandlerUnfavoriteRejectsNonIntegerIDWithoutCallingService(t *testing.T) {
+	response := performUnfavoriteRequest(t, NewHandler(NewMockService(t)), "abc", uuid.New(), true)
+
+	assertErrorMessage(t, response, http.StatusBadRequest, "invalid request")
+}
+
+func TestHandlerUnfavoriteMapsUnexpectedErrorToInternalError(t *testing.T) {
+	service := NewMockService(t)
+	service.EXPECT().Unfavorite(mock.Anything, 42, mock.Anything).Return(errors.New("database unavailable"))
+
+	response := performUnfavoriteRequest(t, NewHandler(service), "42", uuid.New(), true)
+
+	assertErrorMessage(t, response, http.StatusInternalServerError, "internal server error")
+}
+
+func performUnfavoriteRequest(t *testing.T, handler *handler, id string, userID uuid.UUID, authenticated bool) *httptest.ResponseRecorder {
+	t.Helper()
+	gin.SetMode(gin.TestMode)
+	response := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(response)
+	request := httptest.NewRequest(http.MethodDelete, "/recipes/"+id+"/favorite", nil)
+	if authenticated {
+		request = request.WithContext(reqctx.WithUserID(request.Context(), userID))
+	}
+	ctx.Request = request
+	ctx.Params = gin.Params{{Key: "id", Value: id}}
+	handler.Unfavorite(ctx)
+	ctx.Writer.WriteHeaderNow()
+	return response
+}
+
+func TestHandlerRateRatesRecipeForAuthenticatedUser(t *testing.T) {
+	service := NewMockService(t)
+	userID := uuid.New()
+	service.EXPECT().Rate(mock.Anything, 42, userID, 5).Return(nil)
+
+	response := performRateRequest(t, NewHandler(service), "42", `{"rating":5}`, userID, true)
+
+	assert.Equal(t, http.StatusNoContent, response.Code)
+	assert.Empty(t, response.Body.Bytes())
+}
+
+func TestHandlerRateRejectsMissingAuthenticatedUserWithoutCallingService(t *testing.T) {
+	response := performRateRequest(t, NewHandler(NewMockService(t)), "42", `{"rating":5}`, uuid.Nil, false)
+
+	assertErrorMessage(t, response, http.StatusUnauthorized, "unauthorized")
+}
+
+func TestHandlerRateRejectsNonIntegerIDWithoutCallingService(t *testing.T) {
+	response := performRateRequest(t, NewHandler(NewMockService(t)), "abc", `{"rating":5}`, uuid.New(), true)
+
+	assertErrorMessage(t, response, http.StatusBadRequest, "invalid request")
+}
+
+func TestHandlerRateRejectsInvalidRequestWithoutCallingService(t *testing.T) {
+	response := performRateRequest(t, NewHandler(NewMockService(t)), "42", `{"rating":0}`, uuid.New(), true)
+
+	assertErrorMessage(t, response, http.StatusBadRequest, "invalid request")
+}
+
+func TestHandlerRateMapsUnexpectedErrorToInternalError(t *testing.T) {
+	service := NewMockService(t)
+	service.EXPECT().Rate(mock.Anything, 42, mock.Anything, 5).Return(errors.New("database unavailable"))
+
+	response := performRateRequest(t, NewHandler(service), "42", `{"rating":5}`, uuid.New(), true)
+
+	assertErrorMessage(t, response, http.StatusInternalServerError, "internal server error")
+}
+
+func performRateRequest(t *testing.T, handler *handler, id string, body string, userID uuid.UUID, authenticated bool) *httptest.ResponseRecorder {
+	t.Helper()
+	gin.SetMode(gin.TestMode)
+	response := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(response)
+	request := httptest.NewRequest(http.MethodPost, "/recipes/"+id+"/rating", bytes.NewBufferString(body))
+	request.Header.Set("Content-Type", "application/json")
+	if authenticated {
+		request = request.WithContext(reqctx.WithUserID(request.Context(), userID))
+	}
+	ctx.Request = request
+	ctx.Params = gin.Params{{Key: "id", Value: id}}
+	handler.Rate(ctx)
+	ctx.Writer.WriteHeaderNow()
+	return response
+}
+
+func performDeleteRequest(t *testing.T, handler *handler, id string, userID uuid.UUID, authenticated bool) *httptest.ResponseRecorder {
+	t.Helper()
+	gin.SetMode(gin.TestMode)
+	response := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(response)
+	request := httptest.NewRequest(http.MethodDelete, "/recipes/"+id, nil)
+	if authenticated {
+		request = request.WithContext(reqctx.WithUserID(request.Context(), userID))
+	}
+	ctx.Request = request
+	ctx.Params = gin.Params{{Key: "id", Value: id}}
+	handler.Delete(ctx)
+	ctx.Writer.WriteHeaderNow()
+	return response
+}
+
+func performReplaceRequest(t *testing.T, handler *handler, id string, body string, userID uuid.UUID, authenticated bool) *httptest.ResponseRecorder {
+	t.Helper()
+	gin.SetMode(gin.TestMode)
+	response := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(response)
+	request := httptest.NewRequest(http.MethodPut, "/recipes/"+id, bytes.NewBufferString(body))
+	request.Header.Set("Content-Type", "application/json")
+	if authenticated {
+		request = request.WithContext(reqctx.WithUserID(request.Context(), userID))
+	}
+	ctx.Request = request
+	ctx.Params = gin.Params{{Key: "id", Value: id}}
+	handler.Replace(ctx)
+	return response
+}
+
+func performGetRecipesRequest(t *testing.T, handler *handler, rawQuery string, userID uuid.UUID, authenticated bool) *httptest.ResponseRecorder {
+	t.Helper()
+	gin.SetMode(gin.TestMode)
+	response := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(response)
+	target := "/recipes"
+	if rawQuery != "" {
+		target += "?" + rawQuery
+	}
+	request := httptest.NewRequest(http.MethodGet, target, nil)
+	if authenticated {
+		request = request.WithContext(reqctx.WithUserID(request.Context(), userID))
+	}
+	ctx.Request = request
+	handler.GetRecipes(ctx)
+	return response
+}
+
+func performGetRecipeRequest(t *testing.T, handler *handler, id string, userID uuid.UUID, authenticated bool) *httptest.ResponseRecorder {
+	t.Helper()
+	gin.SetMode(gin.TestMode)
+	response := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(response)
+	request := httptest.NewRequest(http.MethodGet, "/recipes/"+id, nil)
+	if authenticated {
+		request = request.WithContext(reqctx.WithUserID(request.Context(), userID))
+	}
+	ctx.Request = request
+	ctx.Params = gin.Params{{Key: "id", Value: id}}
+	handler.GetRecipe(ctx)
+	return response
+}
+
+func performCreateRequest(t *testing.T, handler *handler, body string, userID uuid.UUID, authenticated bool) *httptest.ResponseRecorder {
+	t.Helper()
+	gin.SetMode(gin.TestMode)
+	response := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(response)
+	request := httptest.NewRequest(http.MethodPost, "/recipes", bytes.NewBufferString(body))
+	request.Header.Set("Content-Type", "application/json")
+	if authenticated {
+		request = request.WithContext(reqctx.WithUserID(request.Context(), userID))
+	}
+	ctx.Request = request
+	handler.Create(ctx)
+	return response
+}
+
+func assertErrorMessage(t *testing.T, response *httptest.ResponseRecorder, status int, message string) {
+	t.Helper()
+	assert.Equal(t, status, response.Code)
+	var body map[string]string
+	assert.NoError(t, json.Unmarshal(response.Body.Bytes(), &body))
+	assert.Equal(t, message, body["message"])
+}

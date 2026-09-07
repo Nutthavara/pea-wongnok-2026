@@ -1,0 +1,86 @@
+package recipe
+
+import (
+	"time"
+
+	"wongnok/internal/user"
+
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
+
+type Difficulty struct {
+	ID        string `gorm:"primaryKey"`
+	Name      string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt
+}
+
+type Duration struct {
+	ID        string `gorm:"primaryKey"`
+	Name      string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt
+}
+
+type Recipe struct {
+	ID            int `gorm:"primaryKey"`
+	Name          string
+	Description   string
+	ImageURL      *string
+	DifficultyID  string
+	Difficulty    Difficulty
+	DurationID    string
+	Duration      Duration
+	AverageRating float64
+	CreatorID     uuid.UUID
+	Creator       user.User `gorm:"foreignKey:CreatorID;references:ID"`
+	IsFavorite    bool      `gorm:"-"`
+	RatingTotal   int64     `gorm:"-"`
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	DeletedAt     gorm.DeletedAt
+	Ingredients   []RecipeIngredient  `gorm:"foreignKey:RecipeID"`
+	Instructions  []RecipeInstruction `gorm:"foreignKey:RecipeID"`
+}
+
+type RecipeIngredient struct {
+	ID          int `gorm:"primaryKey"`
+	RecipeID    int
+	Recipe      Recipe `gorm:"foreignKey:RecipeID;references:ID"`
+	Description string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	DeletedAt   gorm.DeletedAt
+}
+
+type RecipeInstruction struct {
+	ID          int `gorm:"primaryKey"`
+	RecipeID    int
+	Recipe      Recipe `gorm:"foreignKey:RecipeID;references:ID"`
+	Description string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	DeletedAt   gorm.DeletedAt
+}
+
+type UserFavorite struct {
+	UserID    uuid.UUID `gorm:"primaryKey"`
+	RecipeID  int       `gorm:"primaryKey"`
+	Recipe    Recipe    `gorm:"foreignKey:RecipeID;references:ID"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt
+}
+
+type RecipeRating struct {
+	UserID    uuid.UUID `gorm:"primaryKey"`
+	RecipeID  int       `gorm:"primaryKey"`
+	Recipe    Recipe    `gorm:"foreignKey:RecipeID;references:ID"`
+	Score     float64
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt
+}
