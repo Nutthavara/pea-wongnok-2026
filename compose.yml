@@ -67,6 +67,29 @@ services:
     ports:
       - "8080:8080"
 
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: wongnok-all-in-one-web
+    restart: always
+    depends_on:
+      - api
+    environment:
+      NODE_ENV: development
+      # ค่านี้ถูก inline ลงใน client bundle จึงต้องเป็น URL ที่ browser บนเครื่อง host
+      # เรียกถึงได้ ไม่ใช่ http://api:8080 ซึ่งใช้ได้เฉพาะภายในเครือข่าย compose
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8080/api/v1
+    ports:
+      # ต้องเป็น 3000 เพราะ api ใช้ FRONTEND_URL redirect browser กลับมาที่พอร์ตนี้
+      - "3000:3000"
+    volumes:
+      # bind mount source code เพื่อให้ hot reload ทำงาน
+      - ./web:/app
+      # anonymous volume กัน artifact ที่ build ใน container ถูก bind mount ทับ
+      - /app/node_modules
+      - /app/.next
+
 volumes:
   wongnok-all-in-one-pgdata:
   wongnok-all-in-one-keycloak-data:
