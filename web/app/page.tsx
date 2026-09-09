@@ -1,9 +1,22 @@
+import Badge from "@/components/bases/badge";
+import { Button } from "@/components/bases/button";
 import Image from "next/image";
 
 export default function Home() {
   return (
     <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
       <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
+        <Badge color={"primary"}>This is badge</Badge>
+        <Button variant={"outlined"} color={"gray"}>
+          Button
+        </Button>
+        <Button variant={"outlined"} color={"error"}>
+          Button
+        </Button>
+        <Button variant={"outlined"} color={"accent"}>
+          Button
+        </Button>
+
         <Image
           className="dark:invert h-5 w-[100px]"
           src="/next.svg"
