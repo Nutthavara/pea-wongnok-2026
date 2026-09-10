@@ -12,6 +12,7 @@ const buttonVariants = cva(
           "border border-transparent disabled:bg-muted disabled:text-muted-foreground/50 disabled:pointer-events-none",
         outlined:
           "border disabled:border-muted disabled:text-muted-foreground/50 disabled:pointer-events-none",
+        text: "border border-transparent disabled:text-muted-foreground/50 disabled:pointer-events-none",
       },
       color: {
         primary: "",
@@ -76,6 +77,26 @@ const buttonVariants = cva(
         color: "gray",
         className:
           "border-muted-foreground text-muted-foreground hover:border-muted-foreground/90 hover:bg-muted-foreground/10",
+      },
+      {
+        variant: "text",
+        color: "primary",
+        className: "text-primary hover:bg-primary/10",
+      },
+      {
+        variant: "text",
+        color: "accent",
+        className: "text-accent-strong hover:bg-accent/10",
+      },
+      {
+        variant: "text",
+        color: "error",
+        className: "text-destructive hover:bg-destructive/10",
+      },
+      {
+        variant: "text",
+        color: "gray",
+        className: "text-muted-foreground hover:bg-muted-foreground/10",
       },
     ],
   },

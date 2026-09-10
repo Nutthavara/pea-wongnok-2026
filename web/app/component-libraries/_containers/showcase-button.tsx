@@ -8,7 +8,7 @@ function ShowcaseButton() {
     <ShowcaseSection
       id="button"
       title="Button"
-      description="Defaults to variant=contained, color=primary, size=medium. Colors are primary, accent, error and gray — Button has no success color."
+      description="Defaults to variant=contained, color=primary, size=medium. Variants are contained, outlined and text. Colors are primary, accent, error and gray — Button has no success color."
     >
       <ShowcaseExample
         label="contained · primary"
@@ -83,6 +83,42 @@ function ShowcaseButton() {
       </ShowcaseExample>
 
       <ShowcaseExample
+        label="text · primary"
+        code={`<Button variant="text" color="primary">Save</Button>`}
+      >
+        <Button variant="text" color="primary">
+          Save
+        </Button>
+      </ShowcaseExample>
+
+      <ShowcaseExample
+        label="text · accent"
+        code={`<Button variant="text" color="accent">Save</Button>`}
+      >
+        <Button variant="text" color="accent">
+          Save
+        </Button>
+      </ShowcaseExample>
+
+      <ShowcaseExample
+        label="text · error"
+        code={`<Button variant="text" color="error">Delete</Button>`}
+      >
+        <Button variant="text" color="error">
+          Delete
+        </Button>
+      </ShowcaseExample>
+
+      <ShowcaseExample
+        label="text · gray"
+        code={`<Button variant="text" color="gray">Cancel</Button>`}
+      >
+        <Button variant="text" color="gray">
+          Cancel
+        </Button>
+      </ShowcaseExample>
+
+      <ShowcaseExample
         label="sizes · contained"
         code={`<Button size="small">Small</Button>
 <Button size="medium">Medium</Button>
@@ -113,11 +149,15 @@ function ShowcaseButton() {
       <ShowcaseExample
         label="disabled"
         code={`<Button disabled>Contained</Button>
-<Button variant="outlined" disabled>Outlined</Button>`}
+<Button variant="outlined" disabled>Outlined</Button>
+<Button variant="text" disabled>Text</Button>`}
       >
         <Button disabled>Contained</Button>
         <Button variant="outlined" disabled>
           Outlined
+        </Button>
+        <Button variant="text" disabled>
+          Text
         </Button>
       </ShowcaseExample>
 
