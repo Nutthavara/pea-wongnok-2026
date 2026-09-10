@@ -1,7 +1,7 @@
-import { Avatar, AvatarGroup } from "@/components/bases/avatar";
+import { Avatar, AvatarGroup } from "@/components/bases";
 
-import ShowcaseExample from "../_components/showcase-example";
-import ShowcaseSection from "../_components/showcase-section";
+import ShowcaseExample from "../_components/ShowcaseExample";
+import ShowcaseSection from "../_components/ShowcaseSection";
 
 const TEAM = [
   { name: "John Doe", imageUrl: "https://i.pravatar.cc/128?img=12" },

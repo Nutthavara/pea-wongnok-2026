@@ -1,7 +1,7 @@
-import { Button } from "@/components/bases/button";
+import { Button } from "@/components/bases";
 
-import ShowcaseExample from "../_components/showcase-example";
-import ShowcaseSection from "../_components/showcase-section";
+import ShowcaseExample from "../_components/ShowcaseExample";
+import ShowcaseSection from "../_components/ShowcaseSection";
 
 function ShowcaseButton() {
   return (
