@@ -16,6 +16,7 @@ import DropdownMenu, {
   DropdownMenuItemProps,
   DropdownMenuSeparatorProps,
 } from "./DropdownMenu";
+import Link, { LinkProps } from "./Link";
 
 export type { AvatarProps, AvatarGroupProps };
 export { Avatar, AvatarGroup };
@@ -44,3 +45,6 @@ export {
   DropdownMenuItem,
   DropdownMenuSeparator,
 };
+
+export type { LinkProps };
+export { Link };
