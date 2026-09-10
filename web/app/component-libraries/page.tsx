@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
-import ShowcaseAvatar from "./_containers/showcase-avatar";
-import ShowcaseBadge from "./_containers/showcase-badge";
-import ShowcaseButton from "./_containers/showcase-button";
-import ShowcaseMenu from "./_containers/showcase-menu";
+import ShowcaseAvatar from "./_containers/ShowcaseAvatar";
+import ShowcaseBadge from "./_containers/ShowcaseBadge";
+import ShowcaseButton from "./_containers/ShowcaseButton";
+import ShowcaseMenu from "./_containers/ShowcaseMenu";
 
 export const metadata: Metadata = {
   title: "Component Libraries",

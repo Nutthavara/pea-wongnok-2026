@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import CodeBlock from "./code-block";
+import CodeBlock from "./CodeBlock";
 
 export type ShowcaseExampleProps = {
   label: string;
