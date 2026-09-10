@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import ShowcaseAvatar from "./_containers/showcase-avatar";
 import ShowcaseBadge from "./_containers/showcase-badge";
 import ShowcaseButton from "./_containers/showcase-button";
+import ShowcaseMenu from "./_containers/showcase-menu";
 
 export const metadata: Metadata = {
   title: "Component Libraries",
@@ -13,6 +14,7 @@ const SECTIONS = [
   { href: "#button", label: "Button" },
   { href: "#badge", label: "Badge" },
   { href: "#avatar", label: "Avatar" },
+  { href: "#menu", label: "Dropdown menu" },
 ];
 
 const ComponentLibraries = () => {
@@ -43,6 +45,7 @@ const ComponentLibraries = () => {
         <ShowcaseButton />
         <ShowcaseBadge />
         <ShowcaseAvatar />
+        <ShowcaseMenu />
       </main>
     </div>
   );
