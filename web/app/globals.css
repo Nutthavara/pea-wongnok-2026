@@ -3,6 +3,7 @@
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
+<<<<<<< HEAD
 
 @layer base {
   :root {
@@ -41,6 +42,8 @@
     --radius: 0.625rem; /* 10px — md */
   }
 }
+=======
+>>>>>>> upstream/01-web-layout
 
 @theme inline {
   --color-background: var(--background);
@@ -65,14 +68,26 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+<<<<<<< HEAD
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
+=======
+  --color-destructive-strong: var(--destructive-strong);
+  --color-destructive-subtle: var(--destructive-subtle);
+  --color-success: var(--success);
+  --color-success-subtle: var(--success-subtle);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-subtle: var(--accent-subtle);
+>>>>>>> upstream/01-web-layout
   --color-muted-foreground: var(--muted-foreground);
   --color-muted: var(--muted);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+<<<<<<< HEAD
   --color-primary-hover: var(--primary-hover);
   --color-primary-subtle: var(--primary-subtle);
   --color-primary-border: var(--primary-border);
@@ -83,6 +98,9 @@
   --color-success: var(--success);
   --color-success-subtle: var(--success-subtle);
   --color-border-subtle: var(--border-subtle);
+=======
+  --color-primary-subtle: var(--primary-subtle);
+>>>>>>> upstream/01-web-layout
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -178,6 +196,7 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+<<<<<<< HEAD
   }
   body {
     @apply bg-background text-foreground;
@@ -186,3 +205,66 @@
     @apply font-sans;
   }
 }
+=======
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+@layer components {
+  .wongnok-text-h1 {
+    font-family: var(--font-wongnok-sans);
+    font-size: 3.25rem;
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+  .wongnok-text-h2 {
+    font-family: var(--font-wongnok-sans);
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+  }
+  .wongnok-text-h3 {
+    font-family: var(--font-wongnok-sans);
+    font-size: 1.0625rem;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+  .wongnok-text-base {
+    font-family: var(--font-wongnok-sans);
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.6;
+  }
+  .wongnok-text-body {
+    font-family: var(--font-wongnok-sans);
+    font-size: 0.9375rem;
+    font-weight: 400;
+    line-height: 1.65;
+  }
+  .wongnok-text-sm {
+    font-family: var(--font-wongnok-sans);
+    font-size: 0.875rem;
+    font-weight: 400;
+    line-height: 1.5;
+  }
+  .wongnok-text-xs {
+    font-family: var(--font-wongnok-sans);
+    font-size: 0.8125rem;
+    font-weight: 400;
+    line-height: 1.5;
+  }
+  .wongnok-text-label {
+    font-family: var(--font-wongnok-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+}
+>>>>>>> upstream/01-web-layout
