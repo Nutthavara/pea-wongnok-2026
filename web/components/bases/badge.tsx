@@ -21,7 +21,7 @@ const badgeVariants = cva(
       },
       size: {
         medium: "px-2.5 py-0.5",
-        large: "px-3.5 py-1",
+        large: "px-3.5 py-1 text-[0.8rem]",
       },
     },
     defaultVariants: {
@@ -33,52 +33,52 @@ const badgeVariants = cva(
       {
         variant: "contained",
         color: "primary",
-        className: "bg-primary text-primary-foreground",
+        className: "bg-primary-subtle text-primary",
       },
       {
         variant: "contained",
         color: "accent",
-        className: "bg-accent text-accent-foreground",
+        className: "bg-accent-subtle text-accent-strong",
       },
       {
         variant: "contained",
         color: "success",
-        className: "bg-success text-primary-foreground",
+        className: "bg-success-subtle text-success",
       },
       {
         variant: "contained",
         color: "error",
-        className: "bg-destructive text-primary-foreground",
+        className: "bg-destructive-subtle text-destructive-strong",
       },
       {
         variant: "contained",
         color: "gray",
-        className: "bg-muted-foreground text-primary-foreground",
+        className: "bg-secondary text-secondary-foreground",
       },
       {
         variant: "outlined",
         color: "primary",
-        className: "border-primary text-primary",
+        className: "bg-card border-primary text-primary",
       },
       {
         variant: "outlined",
         color: "accent",
-        className: "border-accent text-accent",
+        className: "bg-card border-accent text-accent-strong",
       },
       {
         variant: "outlined",
         color: "success",
-        className: "border-success text-success",
+        className: "bg-card border-success text-success",
       },
       {
         variant: "outlined",
         color: "error",
-        className: "border-destructive text-destructive",
+        className: "bg-card border-destructive text-destructive-strong",
       },
       {
         variant: "outlined",
         color: "gray",
-        className: "border-muted-foreground text-muted-foreground",
+        className: "bg-card border-border text-secondary-foreground",
       },
     ],
   },
